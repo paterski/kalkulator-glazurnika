@@ -184,9 +184,11 @@ details.rates[open] summary .tag::after{content:" ▴"}
 
 /* Panel wyniku */
 .result{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0;box-shadow:0 4px 18px rgba(15,28,42,.07)}
-.res-zero{padding:20px 22px 16px;border-bottom:1px solid var(--line)}
+.res-top{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.res-zero{padding:18px 20px 14px;min-width:0}
+.res-list{border-left:1px solid var(--line)}
 .res-zero .eyebrow{color:var(--muted)}
-.res-zero .big{font-size:36px;font-weight:700;line-height:1.1;margin-top:2px;letter-spacing:-.01em}
+.res-zero .big{font-size:28px;font-weight:700;line-height:1.1;margin-top:2px;letter-spacing:-.01em}
 .res-zero .sub{font-size:14px;color:var(--muted);margin-top:4px}
 .facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid var(--line)}
 .fact{padding:12px 14px;border-right:1px solid var(--line);min-width:0}
@@ -205,7 +207,7 @@ details.rates[open] summary .tag::after{content:" ▴"}
 .pos{color:var(--good)} .neg{color:var(--bad)}
 .pct-badge.pos{background:var(--good-soft)} .pct-badge.neg{background:var(--bad-soft)} .pct-badge.zero{background:var(--line);color:var(--ink-2)}
 
-.range{position:relative;margin-top:26px;padding-bottom:30px}
+.range{position:relative;margin-top:44px;padding-bottom:30px}
 .range input{-webkit-appearance:none;appearance:none;width:100%;height:10px;border-radius:6px;background:var(--line);margin:0;outline:none;cursor:pointer}
 .range input::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--surface);border:4px solid var(--accent);box-shadow:0 2px 6px rgba(15,28,42,.25);cursor:grab}
 .range input::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--surface);border:4px solid var(--accent);box-shadow:0 2px 6px rgba(15,28,42,.25);cursor:grab}
@@ -213,7 +215,9 @@ details.rates[open] summary .tag::after{content:" ▴"}
 .zero-tick{position:absolute;top:-8px;width:3px;height:26px;border-radius:2px;background:var(--ink);transform:translateX(-1.5px);pointer-events:none}
 .zero-lbl{position:absolute;top:24px;transform:translateX(-50%);font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;pointer-events:none}
 .end-lbl{position:absolute;top:24px;font-size:13px;font-weight:500;color:var(--muted)}
-.end-lbl.l{left:0}.end-lbl.r{right:0}
+.end-lbl.r{right:0}
+.list-tick{position:absolute;top:-8px;width:3px;height:26px;border-radius:2px;background:var(--accent);transform:translateX(-1.5px);pointer-events:none}
+.list-lbl{position:absolute;top:-32px;transform:translateX(-50%);font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap;pointer-events:none}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{min-height:38px;border:1.5px solid var(--field-border);background:var(--surface);border-radius:999px;padding:4px 14px;font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .chip:hover{border-color:var(--accent);color:var(--accent)}
@@ -395,16 +399,19 @@ tr.cost td{color:var(--muted)}
 
       <!-- Koszty własne -->
       <section class="sec">
-        <div class="sec-h"><h2>Twoje koszty</h2><span class="tag">odejmowane od tego, co zostaje</span></div>
+        <div class="sec-h"><h2>Twoje koszty</h2><span class="tag">z nich liczona jest wycena na zero</span></div>
         <div class="sec-b">
-          <div class="task" data-task="costs">
-            <label class="task-head"><input type="checkbox" id="costs-on" data-path="costs.on">
-              <span class="task-txt"><b>Odliczaj podatek i inne koszty</b><small>Podatek liczony od ceny dla klienta; inne koszty to np. tarcze, wiertła, chemia.</small></span></label>
-            <div class="task-ctrl">
-              <label class="fld w-sm"><input type="number" id="costs-tax" data-path="costs.tax" min="0" max="100" step="0.5" aria-label="Podatek w procentach"><span>% podatku</span></label>
-              <label class="fld"><input type="number" id="costs-other" data-path="costs.other" min="0" step="10" aria-label="Inne koszty w złotych"><span>zł</span></label>
-            </div>
+          <div class="grid-in">
+            <label class="lab">Materiały kupowane przez Ciebie
+              <span class="fld"><input type="number" id="costs-mat" data-path="costs.mat" min="0" step="10" inputmode="decimal"><span>zł</span></span></label>
+            <label class="lab">Narzędzia i zużycie (tarcze, wiertła)
+              <span class="fld"><input type="number" id="costs-tools" data-path="costs.tools" min="0" step="10" inputmode="decimal"><span>zł</span></span></label>
+            <label class="lab">Koszty stałe za dzień (ZUS, telefon)
+              <span class="fld"><input type="number" id="costs-daily" data-path="costs.daily" min="0" step="5" inputmode="decimal"><span>zł/dzień</span></span></label>
+            <label class="lab">Podatek od ceny dla klienta
+              <span class="fld"><input type="number" id="costs-tax" data-path="costs.tax" min="0" max="95" step="0.5" inputmode="decimal"><span>%</span></span></label>
           </div>
+          <p class="note" style="margin:12px 0 0">Paliwo bierze się z sekcji „Dojazd”. Materiały kupowane przez Ciebie są też doliczane do ceny wg cennika, bo klient je zwraca.</p>
         </div>
       </section>
 
@@ -417,10 +424,17 @@ tr.cost td{color:var(--muted)}
 
     <!-- Wynik -->
     <aside class="result" id="wynik" aria-live="polite">
-      <div class="res-zero">
-        <div class="eyebrow">Wycena na zero</div>
-        <div class="big num" id="zeroVal">0 zł</div>
-        <div class="sub num" id="zeroSub"></div>
+      <div class="res-top">
+        <div class="res-zero">
+          <div class="eyebrow">Wycena na zero</div>
+          <div class="big num" id="zeroVal">0 zł</div>
+          <div class="sub num" id="zeroSub"></div>
+        </div>
+        <div class="res-zero res-list">
+          <div class="eyebrow">Wycena wg cennika</div>
+          <div class="big num" id="listVal">0 zł</div>
+          <div class="sub num" id="listSub"></div>
+        </div>
       </div>
       <div class="facts">
         <div class="fact"><div class="k">Praca</div><div class="v num" id="fHours">0 h</div></div>
@@ -436,17 +450,19 @@ tr.cost td{color:var(--muted)}
           <span class="pct-badge num zero" id="pctBadge">0%</span>
         </div>
         <div class="range">
-          <input type="range" id="slider" min="-50" max="100" step="1" aria-label="Narzut względem wyceny na zero">
+          <input type="range" id="slider" min="0" max="20000" step="10" aria-label="Cena dla klienta">
           <span class="zero-tick" id="zeroTick"></span>
           <span class="zero-lbl" id="zeroLbl">0 · na zero</span>
-          <span class="end-lbl l">−50%</span><span class="end-lbl r">+100%</span>
+          <span class="list-tick" id="listTick"></span>
+          <span class="list-lbl" id="listLbl">cennik</span>
+          <span class="end-lbl r num" id="maxLbl"></span>
         </div>
         <div class="chips" id="chips">
-          <button type="button" class="chip" data-mk="-10">−10%</button>
-          <button type="button" class="chip" data-mk="0">Na zero</button>
-          <button type="button" class="chip" data-mk="10">+10%</button>
-          <button type="button" class="chip" data-mk="20">+20%</button>
-          <button type="button" class="chip" data-mk="30">+30%</button>
+          <button type="button" class="chip" id="zeroBtn">Na zero</button>
+          <button type="button" class="chip" data-mk="-10">Cennik −10%</button>
+          <button type="button" class="chip" data-mk="0">Cennik</button>
+          <button type="button" class="chip" data-mk="10">Cennik +10%</button>
+          <button type="button" class="chip" data-mk="20">Cennik +20%</button>
           <button type="button" class="chip" id="roundUp">Zaokrąglij w górę do 100 zł</button>
         </div>
       </div>
@@ -455,7 +471,7 @@ tr.cost td{color:var(--muted)}
         <div class="kpi main"><div class="k">Zostaje Tobie</div><div class="v num" id="kNet">0 zł</div><div class="s num" id="kNetS"></div></div>
         <div class="kpi"><div class="k">Dniówka</div><div class="v num" id="kDay">0 zł</div><div class="s num" id="kDayS"></div></div>
         <div class="kpi"><div class="k">Godzinówka</div><div class="v num" id="kHour">0 zł</div><div class="s num" id="kHourS"></div></div>
-        <div class="kpi"><div class="k">Zarobek vs wycena na zero</div><div class="v num" id="kPct">0%</div><div class="s num" id="kPctS"></div></div>
+        <div class="kpi"><div class="k">Zarobek ponad wycenę na zero</div><div class="v num" id="kPct">0%</div><div class="s num" id="kPctS"></div></div>
         <div class="kpi"><div class="k">Cena za m² płytek</div><div class="v num" id="kM2">0 zł</div><div class="s num" id="kM2S"></div></div>
       </div>
 
@@ -562,9 +578,10 @@ function defaults(){
     fuga:{on:true,type:'zw',mb:0},
     ukos:{on:true,mb:6},
     travel:{km:25,cons:7.5,fuel:6.2,hpd:8,extra:1,mode:'auto',cal:{},calMonth:''},
-    costs:{on:false,tax:12,other:0},
+    costs:{mat:0,tools:100,daily:0,tax:0},
     rates:Object.assign({},DEFAULT_RATES),
-    markup:15
+    markup:0,
+    v:2
   };
   s.fuga.mb=Math.round(fugaEstimate(s));
   return s;
@@ -590,6 +607,7 @@ function load(){
       S.rates=Object.assign({},DEFAULT_RATES,o.rates||{});
       S.prep=Object.assign(defaults().prep,o.prep||{});
       S.travel=Object.assign(defaults().travel,o.travel||{});
+      if(o.v!==2){S.costs=defaults().costs;S.markup=0;S.v=2}
       if(!Array.isArray(S.tiles)||!S.tiles.length) S.tiles=defaults().tiles;
       return;}
   }catch(e){}
@@ -638,17 +656,22 @@ function compute(){
   const km=trips*2*num(S.travel.km);
   const liters=km*num(S.travel.cons)/100;
   const fuelCost=liters*num(S.travel.fuel);
-  const zero=labor+fuelCost;
-  return {items,out,tileM2,workMin,hours,labor,hpd,autoDays,days,calDates,calHours,cal,trips,km,liters,fuelCost,zero};
+  // Wycena na zero: cena, przy której po odjęciu wszystkich Twoich kosztów zostaje 0 zł
+  const mat=num(S.costs.mat), tools=num(S.costs.tools), dailyRate=num(S.costs.daily), daily=dailyRate*days;
+  const t=Math.min(95,Math.max(0,num(S.costs.tax)))/100;
+  const fixed=fuelCost+mat+tools+daily;
+  const zero=fixed/(1-t);
+  // Wycena wg cennika: robocizna + dojazdy + zwrot za materiały
+  const list=labor+fuelCost+mat;
+  return {items,out,tileM2,workMin,hours,labor,hpd,autoDays,days,calDates,calHours,cal,trips,km,liters,fuelCost,mat,tools,dailyRate,daily,t,fixed,zero,list};
 }
 function tileName(t){
   if(t.preset!=='custom'){const p=presetById(t.preset);if(p)return p.label}
   return fN(num(t.w))+'×'+fN(num(t.h));
 }
 function netAt(P,c){
-  const tax=S.costs.on?P*num(S.costs.tax)/100:0;
-  const other=S.costs.on?num(S.costs.other):0;
-  return {net:P-c.fuelCost-tax-other,tax,other};
+  const tax=P*c.t;
+  return {net:P-c.fixed-tax,tax};
 }
 
 /* Render: płytki */
@@ -837,16 +860,14 @@ document.addEventListener('click',e=>{
 
 /* Suwak */
 const slider=document.getElementById('slider'),priceInput=document.getElementById('priceInput');
-slider.addEventListener('input',()=>{S.markup=+slider.value;update()});
-priceInput.addEventListener('input',()=>{
-  const c=compute();const P=num(priceInput.value);
-  if(c.zero>0){S.markup=(P/c.zero-1)*100}
-  update(true);
-});
+const setPrice=P=>{const c=compute();S.markup=c.list>0?(P/c.list-1)*100:0;return c};
+slider.addEventListener('input',()=>{setPrice(+slider.value);update()});
+priceInput.addEventListener('input',()=>{setPrice(num(priceInput.value));update(true)});
 document.getElementById('chips').addEventListener('click',e=>{
   const b=e.target.closest('[data-mk]');
   if(b){S.markup=+b.dataset.mk;update();return}
-  if(e.target.id==='roundUp'){const c=compute();if(c.zero>0){const P=c.zero*(1+S.markup/100);const R=Math.ceil(P/100-1e-9)*100;S.markup=(R/c.zero-1)*100;update()}}
+  if(e.target.id==='zeroBtn'){const c=compute();setPrice(Math.ceil(c.zero));update();return}
+  if(e.target.id==='roundUp'){const c=compute();const P=c.list*(1+S.markup/100);setPrice(Math.ceil(P/100-1e-9)*100);update()}
 });
 
 /* Reset */
@@ -870,7 +891,7 @@ function update(fromPriceInput){
   const c=compute(),r=S.rates;
   // wiersze zadań
   document.querySelectorAll('.task[data-task]').forEach(row=>{
-    const k=row.dataset.task;if(k==='costs'){row.classList.toggle('off',!S.costs.on);return}
+    const k=row.dataset.task;
     const on=!!getPath(k+'.on');row.classList.toggle('off',!on);
     const o=c.out[k],el=row.querySelector('[data-out]');
     if(o&&el)el.innerHTML=`<b>${zl(o.price)}</b>${fT(o.min)}`;
@@ -891,63 +912,88 @@ function update(fromPriceInput){
   calStatus(c);
 
   // wynik
-  const P=c.zero*(1+S.markup/100);
-  const n=netAt(P,c), n0=netAt(c.zero,c);
+  const P=c.list*(1+S.markup/100);
+  const n=netAt(P,c);
   document.getElementById('zeroVal').textContent=zl(c.zero);
-  document.getElementById('zeroSub').textContent=`robocizna ${zl(c.labor)} + dojazdy ${zl(c.fuelCost)}`;
+  const zp=[`paliwo ${zl(c.fuelCost)}`];
+  if(c.mat)zp.push(`materiały ${zl(c.mat)}`);if(c.tools)zp.push(`narzędzia ${zl(c.tools)}`);
+  if(c.daily)zp.push(`koszty dnia ${zl(c.daily)}`);if(c.t)zp.push(`podatek ${fN(c.t*100)}%`);
+  document.getElementById('zeroSub').textContent=zp.join(' + ');
+  document.getElementById('listVal').textContent=zl(c.list);
+  document.getElementById('listSub').textContent=`robocizna ${zl(c.labor)} + dojazdy ${zl(c.fuelCost)}`+(c.mat?` + materiały ${zl(c.mat)}`:'');
   document.getElementById('fHours').textContent=fN(c.hours)+' h';
   document.getElementById('fDays').textContent=c.days;
   document.getElementById('fTrips').textContent=c.trips;
   document.getElementById('fFuel').textContent=zl(c.fuelCost);
 
   if(!fromPriceInput)priceInput.value=Math.round(P);
-  const sv=Math.max(-50,Math.min(100,S.markup));slider.value=Math.round(sv);
-  paintSlider(sv);
-  const pct=c.zero>0?S.markup:0, cls=pct>0.05?'pos':pct<-0.05?'neg':'zero';
-  const badge=document.getElementById('pctBadge');badge.className='pct-badge num '+cls;badge.textContent=signPct(pct);
+  const max=Math.max(100,Math.ceil(Math.max(c.list,c.zero)*1.5/100)*100);
+  slider.max=max;slider.value=Math.max(0,Math.min(max,P));
+  paintSlider(P,c,max);
+  const vsList=c.list>0?S.markup:0, lcls=Math.abs(vsList)<0.05?'zero':vsList>0?'pos':'neg';
+  const badge=document.getElementById('pctBadge');badge.className='pct-badge num '+lcls;
+  badge.textContent=lcls==='zero'?'= cennik':signPct(vsList)+' od cennika';
   document.querySelectorAll('#chips [data-mk]').forEach(b=>b.classList.toggle('on',Math.abs(S.markup-(+b.dataset.mk))<0.05));
+  document.getElementById('zeroBtn').classList.toggle('on',c.zero>0&&Math.abs(P-Math.ceil(c.zero))<0.5);
 
-  const kNet=document.getElementById('kNet');kNet.textContent=zl(n.net);kNet.className='v num';kNet.parentElement.classList.toggle('neg',n.net<0);
-  const ded=[`paliwo ${zl(c.fuelCost)}`];if(S.costs.on){ded.push(`podatek ${zl(n.tax)}`);if(n.other)ded.push(`inne ${zl(n.other)}`)}
-  document.getElementById('kNetS').textContent=`${zl(P)} − ${ded.join(' − ')}`;
+  const kNet=document.getElementById('kNet');kNet.textContent=zl(n.net);kNet.parentElement.classList.toggle('neg',n.net<-0.5);
+  const ded=[];if(c.fuelCost)ded.push(`paliwo ${zl(c.fuelCost)}`);if(c.mat)ded.push(`materiały ${zl(c.mat)}`);
+  if(c.tools)ded.push(`narzędzia ${zl(c.tools)}`);if(c.daily)ded.push(`koszty dnia ${zl(c.daily)}`);if(c.t)ded.push(`podatek ${zl(n.tax)}`);
+  document.getElementById('kNetS').textContent=`${zl(P)}`+(ded.length?` − ${ded.join(' − ')}`:'');
   document.getElementById('kDay').textContent=c.days?zl(n.net/c.days):'—';
-  document.getElementById('kDayS').textContent=c.days?`${c.days} ${dni(c.days)} na budowie`:'brak dni pracy';
+  document.getElementById('kDayS').textContent=c.days?`zostaje ÷ ${c.days} ${dni(c.days)} na budowie`:'brak dni pracy';
   document.getElementById('kHour').textContent=c.hours>0?zl(n.net/c.hours):'—';
-  document.getElementById('kHourS').textContent=`${fN(c.hours)} h pracy`;
-  const kPct=document.getElementById('kPct');kPct.textContent=signPct(pct);kPct.className='v num '+(cls==='zero'?'':cls);
-  const netDiff=n.net-n0.net, netPct=n0.net>0?netDiff/n0.net*100:0;
-  document.getElementById('kPctS').textContent=`${signZl(P-c.zero)} · na rękę ${signPct(netPct)}`;
+  document.getElementById('kHourS').textContent=`zostaje ÷ ${fN(c.hours)} h pracy`;
+  const over=P-c.zero, overPct=c.zero>0?over/c.zero*100:0, margin=P>0?n.net/P*100:0;
+  const kPct=document.getElementById('kPct');
+  kPct.textContent=c.zero>0?signPct(overPct):signZl(over);
+  kPct.className='v num '+(over>0.5?'pos':over<-0.5?'neg':'');
+  document.getElementById('kPctS').textContent=`${signZl(over)} · ${fN(margin,0)}% ceny zostaje Tobie`;
   document.getElementById('kM2').textContent=c.tileM2>0?zl(P/c.tileM2):'—';
-  document.getElementById('kM2S').textContent=c.tileM2>0?`całość ÷ ${fN(c.tileM2)} m²`:'';
+  document.getElementById('kM2S').textContent=c.tileM2>0?`cena ÷ ${fN(c.tileM2)} m²`:'';
 
   // tabela
-  const rows=c.items.map(i=>`<tr><td>${esc(i.name)}</td><td class="r">${i.qty}</td><td class="r">${fT(i.min)}</td><td class="r">${zl(i.price)}</td></tr>`).join('');
-  document.getElementById('tbl').innerHTML=rows+
-    `<tr class="cost"><td>Dojazdy: ${c.trips} × 2 × ${fN(num(S.travel.km))} km</td><td class="r">${fN(c.liters)} l</td><td class="r">${fN(c.km,0)} km</td><td class="r">${zl(c.fuelCost)}</td></tr>`+
-    `<tr class="sum"><td>Wycena na zero</td><td></td><td class="r">${fT(c.workMin)}</td><td class="r">${zl(c.zero)}</td></tr>`+
-    `<tr class="sum"><td>Cena dla klienta (${signPct(pct)})</td><td></td><td></td><td class="r">${zl(P)}</td></tr>`;
+  const row=(a,q,t,v,cls)=>`<tr${cls?` class="${cls}"`:''}><td>${a}</td><td class="r">${q||''}</td><td class="r">${t||''}</td><td class="r">${v}</td></tr>`;
+  let h=c.items.map(i=>row(esc(i.name),i.qty,fT(i.min),zl(i.price))).join('');
+  h+=row(`Dojazdy: ${c.trips} × 2 × ${fN(num(S.travel.km))} km`,`${fN(c.liters)} l`,`${fN(c.km,0)} km`,zl(c.fuelCost));
+  if(c.mat)h+=row('Materiały (zwrot)','','',zl(c.mat));
+  h+=row('Wycena wg cennika','',fT(c.workMin),zl(c.list),'sum');
+  h+=row('Cena dla klienta','','',zl(P),'sum');
+  if(c.fuelCost)h+=row('− paliwo','','','−'+zl(c.fuelCost),'cost');
+  if(c.mat)h+=row('− materiały','','','−'+zl(c.mat),'cost');
+  if(c.tools)h+=row('− narzędzia i zużycie','','','−'+zl(c.tools),'cost');
+  if(c.daily)h+=row(`− koszty stałe: ${c.days} × ${zl(c.dailyRate)}`,'','','−'+zl(c.daily),'cost');
+  if(c.t)h+=row(`− podatek ${fN(c.t*100)}% od ceny`,'','','−'+zl(n.tax),'cost');
+  h+=row('Zostaje Tobie','','',zl(n.net),'sum');
+  h+=row('Wycena na zero (zostaje 0 zł)','','',zl(c.zero),'cost');
+  document.getElementById('tbl').innerHTML=h;
 
   document.getElementById('mPrice').textContent=zl(P);
   document.getElementById('mNet').textContent='· '+zl(n.net);
 
   lastSummary=[
     'Wycena prac glazurniczych',
-    ...c.items.map(i=>`- ${i.name}: ${i.qty}, ${zl(i.price)}`),
-    `- Dojazdy (${c.trips} kursów, ${fN(c.km,0)} km): ${zl(c.fuelCost)}`,
+    ...c.items.map(i=>`- ${i.name}: ${i.qty}`),
     `Czas pracy: ok. ${fN(c.hours)} h, ${c.days} ${dni(c.days)}`,
     `Cena: ${zl(P)}`
   ].join('\n');
   save();
 }
 function dni(n){return n===1?'dzień':'dni'}
-function paintSlider(v){
-  const pz=(0+50)/150, pv=(v+50)/150;
+function paintSlider(P,c,max){
+  const cl=x=>Math.max(0,Math.min(1,x));
+  const pz=cl(c.zero/max), pv=cl(P/max), pl=cl(c.list/max);
   const a=Math.min(pz,pv)*100,b=Math.max(pz,pv)*100;
-  const col=v>=0?'var(--good)':'var(--bad)';
+  const col=P>=c.zero?'var(--good)':'var(--bad)';
   slider.style.background=`linear-gradient(to right,var(--line) 0 ${a}%,${col} ${a}% ${b}%,var(--line) ${b}% 100%)`;
-  const left=`calc(${pz*100}% + ${(0.5-pz)*24}px)`;
-  document.getElementById('zeroTick').style.left=left;
-  document.getElementById('zeroLbl').style.left=left;
+  const pos=p=>`calc(${p*100}% + ${(0.5-p)*28}px)`;
+  const place=(el,p)=>{el.style.left=pos(p);el.style.transform=p<0.12?'translateX(-14px)':p>0.88?'translateX(calc(-100% + 14px))':'translateX(-50%)'};
+  document.getElementById('zeroTick').style.left=pos(pz);
+  place(document.getElementById('zeroLbl'),pz);
+  document.getElementById('listTick').style.left=pos(pl);
+  place(document.getElementById('listLbl'),pl);
+  document.getElementById('maxLbl').textContent=zl(max);
+  document.getElementById('maxLbl').hidden=pz>0.7||pl>0.8;
 }
 
 load();

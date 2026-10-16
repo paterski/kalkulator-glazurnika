@@ -129,6 +129,9 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .tf .fld,.tf .fld input{width:100%}
 .tf-wide{grid-column:span 2}
 .custom-wh{display:contents}
+.tf-chk{grid-column:1 / -1;display:flex;align-items:center;gap:10px;min-height:var(--h);cursor:pointer;font-size:15px;color:var(--ink-2)}
+.tf-chk input{width:22px;height:22px;margin:0;accent-color:var(--accent);flex:none;cursor:pointer}
+.tf-chk b{color:var(--ink);font-weight:600}
 .tile-meta{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;gap:6px 14px;flex-wrap:wrap;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:4px}
 .tile-meta b{color:var(--ink);font-weight:700}
 .tile-meta .meta-r{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -145,6 +148,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .grid-in{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;padding-top:14px}
 .lab{display:grid;gap:5px;font-size:14px;font-weight:600;color:var(--ink-2)}
 .lab .fld,.lab .fld input{width:100%}
+.crew-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding-top:14px}
+.lab-t{font-size:14px;font-weight:600;color:var(--ink-2);flex-basis:100%}
 .mode-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding-top:18px}
 .note{font-size:14px;color:var(--muted)}
 .cal{margin-top:14px;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--surface-2)}
@@ -357,8 +362,17 @@ tr.cost td{color:var(--muted)}
 
       <!-- Dojazd -->
       <section class="sec">
-        <div class="sec-h"><h2>Dojazd i dni pracy</h2><span class="tag">każdy dzień = jazda tam i z powrotem</span></div>
+        <div class="sec-h"><h2>Ekipa, dojazd i dni pracy</h2><span class="tag">każdy dzień = jazda tam i z powrotem</span></div>
         <div class="sec-b">
+          <div class="crew-row">
+            <span class="lab-t">Ile osób pracuje na budowie</span>
+            <div class="seg" role="radiogroup" aria-label="Liczba osób">
+              <label><input type="radio" name="crew" id="crew-1" value="1" data-path="crew"><span>Solo</span></label>
+              <label><input type="radio" name="crew" id="crew-2" value="2" data-path="crew"><span>2 osoby</span></label>
+              <label><input type="radio" name="crew" id="crew-3" value="3" data-path="crew"><span>3 osoby</span></label>
+            </div>
+            <span class="note" id="crewNote"></span>
+          </div>
           <div class="grid-in">
             <label class="lab">Odległość w jedną stronę
               <span class="fld"><input type="number" id="t-km" data-path="travel.km" min="0" step="1"><span>km</span></span></label>
@@ -408,10 +422,12 @@ tr.cost td{color:var(--muted)}
               <span class="fld"><input type="number" id="costs-tools" data-path="costs.tools" min="0" step="10" inputmode="decimal"><span>zł</span></span></label>
             <label class="lab">Koszty stałe za dzień (ZUS, telefon)
               <span class="fld"><input type="number" id="costs-daily" data-path="costs.daily" min="0" step="5" inputmode="decimal"><span>zł/dzień</span></span></label>
+            <label class="lab">Dniówka dla pomocnika (za osobę)
+              <span class="fld"><input type="number" id="costs-helper" data-path="costs.helper" min="0" step="10" inputmode="decimal"><span>zł/dzień</span></span></label>
             <label class="lab">Podatek od ceny dla klienta
               <span class="fld"><input type="number" id="costs-tax" data-path="costs.tax" min="0" max="95" step="0.5" inputmode="decimal"><span>%</span></span></label>
           </div>
-          <p class="note" style="margin:12px 0 0">Paliwo bierze się z sekcji „Dojazd”. Materiały kupowane przez Ciebie są też doliczane do ceny wg cennika, bo klient je zwraca.</p>
+          <p class="note" style="margin:12px 0 0">Paliwo bierze się z sekcji „Dojazd”. Materiały kupowane przez Ciebie są też doliczane do ceny wg cennika, bo klient je zwraca. Dniówka dla pomocnika liczy się tylko przy pracy w 2–3 osoby; zostaw 0, jeśli dzielicie się zarobkiem po równo.</p>
         </div>
       </section>
 
@@ -437,7 +453,7 @@ tr.cost td{color:var(--muted)}
         </div>
       </div>
       <div class="facts">
-        <div class="fact"><div class="k">Praca</div><div class="v num" id="fHours">0 h</div></div>
+        <div class="fact"><div class="k">Praca (rbh)</div><div class="v num" id="fHours">0 h</div></div>
         <div class="fact"><div class="k">Dni</div><div class="v num" id="fDays">0</div></div>
         <div class="fact"><div class="k">Kursy</div><div class="v num" id="fTrips">0</div></div>
         <div class="fact"><div class="k">Paliwo</div><div class="v num" id="fFuel">0 zł</div></div>
@@ -468,7 +484,7 @@ tr.cost td{color:var(--muted)}
       </div>
 
       <div class="kpis">
-        <div class="kpi main"><div class="k">Zostaje Tobie</div><div class="v num" id="kNet">0 zł</div><div class="s num" id="kNetS"></div></div>
+        <div class="kpi main"><div class="k" id="kNetL">Zostaje Tobie</div><div class="v num" id="kNet">0 zł</div><div class="s num" id="kNetS"></div></div>
         <div class="kpi"><div class="k">Dniówka</div><div class="v num" id="kDay">0 zł</div><div class="s num" id="kDayS"></div></div>
         <div class="kpi"><div class="k">Godzinówka</div><div class="v num" id="kHour">0 zł</div><div class="s num" id="kHourS"></div></div>
         <div class="kpi"><div class="k">Zarobek ponad wycenę na zero</div><div class="v num" id="kPct">0%</div><div class="s num" id="kPctS"></div></div>
@@ -509,7 +525,8 @@ const DEFAULT_RATES={
   bialyRate:150,
   otworPrice:100, otworMin:15,
   fugaZw:20, fugaEpo:100, fugaMin:3,
-  ukosPrice:150, ukosMin:22
+  ukosPrice:150, ukosMin:22,
+  cutMult:1.5
 };
 const RATE_DEFS=[
   ['hourly','Stawka za przygotowanie podłoża','zł/h'],
@@ -520,7 +537,8 @@ const RATE_DEFS=[
   ['bialyRate','Biały montaż','zł/h'],
   ['otworPrice','Otwór: cena','zł'],['otworMin','Otwór: czas','min'],
   ['fugaZw','Fuga zwykła','zł/mb'],['fugaEpo','Fuga epoksydowa','zł/mb'],['fugaMin','Fugowanie: czas','min/mb'],
-  ['ukosPrice','Ukosowanie: cena','zł/mb'],['ukosMin','Ukosowanie: czas','min/mb']
+  ['ukosPrice','Ukosowanie: cena','zł/mb'],['ukosMin','Ukosowanie: czas','min/mb'],
+  ['cutMult','Docinki: mnożnik czasu układania','×']
 ];
 const PREP=[['kucie','Kucie podłoża'],['wynoszenie','Wyniesienie gruzu'],['odkurzanie','Odkurzanie'],['gruntowanie','Gruntowanie']];
 
@@ -562,13 +580,14 @@ function estimateTile(w,h){
   if(a>=100) return {price:270,min:85};
   return {price:350,min:120};
 }
+const cutF=t=>t.cuts?Math.max(1,num(S.rates.cutMult,1.5)):1;
 const mbPerM2=t=>(t.w>0&&t.h>0)?(100/t.w+100/t.h):0;
 
 function defaults(){
   const s={
     tiles:[
-      {label:'Podłoga',m2:6,preset:'60x60',w:60,h:60,price:180,min:45},
-      {label:'Ściany',m2:24,preset:'120x60',w:120,h:60,price:180,min:45}
+      {label:'Podłoga',m2:6,preset:'60x60',w:60,h:60,price:180,min:45,cuts:false},
+      {label:'Ściany',m2:24,preset:'120x60',w:120,h:60,price:180,min:45,cuts:false}
     ],
     prep:{kucie:{on:false,m2:''},wynoszenie:{on:false,m2:''},odkurzanie:{on:true,m2:''},gruntowanie:{on:true,m2:''}},
     wnoszenie:{on:true,h:1},
@@ -578,7 +597,8 @@ function defaults(){
     fuga:{on:true,type:'zw',mb:0},
     ukos:{on:true,mb:6},
     travel:{km:25,cons:7.5,fuel:6.2,hpd:8,extra:1,mode:'auto',cal:{},calMonth:''},
-    costs:{mat:0,tools:100,daily:0,tax:0},
+    costs:{mat:0,tools:100,daily:0,tax:0,helper:0},
+    crew:1,
     rates:Object.assign({},DEFAULT_RATES),
     markup:0,
     v:2
@@ -608,6 +628,7 @@ function load(){
       S.prep=Object.assign(defaults().prep,o.prep||{});
       S.travel=Object.assign(defaults().travel,o.travel||{});
       if(o.v!==2){S.costs=defaults().costs;S.markup=0;S.v=2}
+      S.costs=Object.assign(defaults().costs,S.costs||{});
       if(!Array.isArray(S.tiles)||!S.tiles.length) S.tiles=defaults().tiles;
       return;}
   }catch(e){}
@@ -624,7 +645,7 @@ function compute(){
   const tileM2=S.tiles.reduce((a,t)=>a+num(t.m2),0);
   S.tiles.forEach(t=>{
     const m2=num(t.m2);
-    items.push({name:(t.label||'Płytki')+' · '+tileName(t),qty:fN(m2)+' m²',min:m2*num(t.min),price:m2*num(t.price)});
+    items.push({name:(t.label||'Płytki')+' · '+tileName(t)+(t.cuts?` (docinki ×${fN(cutF(t),2)})`:''),qty:fN(m2)+' m²',min:m2*num(t.min)*cutF(t),price:m2*num(t.price)});
   });
   PREP.forEach(([k,name])=>{
     const p=S.prep[k];const a=num(p.m2,tileM2);const min=a*num(r[k]);const price=min/60*num(r.hourly);
@@ -647,7 +668,10 @@ function compute(){
 
   const workMin=items.reduce((a,i)=>a+i.min,0), labor=items.reduce((a,i)=>a+i.price,0), hours=workMin/60;
   const hpd=Math.max(0.5,num(S.travel.hpd,8));
-  const autoDays=hours>0?Math.ceil(hours/hpd-1e-9):0;
+  // hours = roboczogodziny; ekipa dzieli je między siebie, więc na budowie spędzacie elapsed godzin
+  const crew=Math.max(1,Math.round(num(S.crew,1)));
+  const elapsed=hours/crew;
+  const autoDays=elapsed>0?Math.ceil(elapsed/hpd-1e-9):0;
   const calDates=Object.keys(S.travel.cal).sort();
   const calHours=calDates.reduce((a,d)=>a+num(S.travel.cal[d]),0);
   const cal=S.travel.mode==='cal';
@@ -659,11 +683,13 @@ function compute(){
   // Wycena na zero: cena, przy której po odjęciu wszystkich Twoich kosztów zostaje 0 zł
   const mat=num(S.costs.mat), tools=num(S.costs.tools), dailyRate=num(S.costs.daily), daily=dailyRate*days;
   const t=Math.min(95,Math.max(0,num(S.costs.tax)))/100;
-  const fixed=fuelCost+mat+tools+daily;
+  const helperRate=num(S.costs.helper), helper=helperRate*(crew-1)*days;
+  const sharers=helperRate>0?1:crew;
+  const fixed=fuelCost+mat+tools+daily+helper;
   const zero=fixed/(1-t);
   // Wycena wg cennika: robocizna + dojazdy + zwrot za materiały
   const list=labor+fuelCost+mat;
-  return {items,out,tileM2,workMin,hours,labor,hpd,autoDays,days,calDates,calHours,cal,trips,km,liters,fuelCost,mat,tools,dailyRate,daily,t,fixed,zero,list};
+  return {items,out,tileM2,workMin,hours,labor,hpd,crew,elapsed,sharers,helperRate,helper,autoDays,days,calDates,calHours,cal,trips,km,liters,fuelCost,mat,tools,dailyRate,daily,t,fixed,zero,list};
 }
 function tileName(t){
   if(t.preset!=='custom'){const p=presetById(t.preset);if(p)return p.label}
@@ -693,6 +719,7 @@ function renderTiles(){
         </span>
         <label class="tf"><span class="tf-l">Cena</span><span class="fld"><input type="number" id="tile-${i}-price" data-tf="price" value="${t.price}" min="0" step="5" inputmode="decimal"><span>zł/m²</span></span></label>
         <label class="tf"><span class="tf-l">Czas</span><span class="fld"><input type="number" id="tile-${i}-min" data-tf="min" value="${t.min}" min="0" step="5" inputmode="decimal"><span>min/m²</span></span></label>
+        <label class="tf-chk"><input type="checkbox" id="tile-${i}-cuts" data-tf="cuts"${t.cuts?' checked':''}><span><b>Dużo docinek</b> · czas układania ×${fN(num(S.rates.cutMult,1.5),2)}</span></label>
         <div class="tile-meta"><span data-meta>${tileMeta(t)}</span>
           <span class="meta-r"><span class="src${own?' own':''}" data-src>${own?'Twoja stawka':'Szacunek, możesz zmienić'}</span>
           ${S.tiles.length>1?`<button type="button" class="rm" data-rm="${i}" aria-label="Usuń powierzchnię ${esc(t.label)}">Usuń</button>`:''}</span></div>
@@ -706,7 +733,7 @@ function shape(t){
 }
 function tileMeta(t){
   const m2=num(t.m2);
-  return `<b>${zl(m2*num(t.price))}</b> · ${fT(m2*num(t.min))} · fuga ≈ ${fN(mbPerM2(t))} mb/m²`;
+  return `<b>${zl(m2*num(t.price))}</b> · ${fT(m2*num(t.min)*cutF(t))}${t.cuts?' z docinkami':''} · fuga ≈ ${fN(mbPerM2(t))} mb/m²`;
 }
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
@@ -714,6 +741,7 @@ tilesEl.addEventListener('input',e=>{
   const el=e.target,f=el.dataset.tf;if(!f)return;
   const row=el.closest('[data-ti]'),i=+row.dataset.ti,t=S.tiles[i];
   if(f==='label'){t.label=el.value}
+  else if(f==='cuts'){t.cuts=el.checked}
   else if(f==='preset'){
     t.preset=el.value;
     const p=presetById(el.value);
@@ -738,7 +766,7 @@ tilesEl.addEventListener('click',e=>{
   S.tiles.splice(+b.dataset.rm,1);renderTiles();update();
 });
 document.getElementById('addTile').addEventListener('click',()=>{
-  S.tiles.push({label:'Powierzchnia '+(S.tiles.length+1),m2:5,preset:'60x60',w:60,h:60,price:180,min:45});
+  S.tiles.push({label:'Powierzchnia '+(S.tiles.length+1),m2:5,preset:'60x60',w:60,h:60,price:180,min:45,cuts:false});
   renderTiles();update();
   const last=tilesEl.querySelector('.tile:last-child [data-tf=m2]');if(last)last.focus();
 });
@@ -767,7 +795,7 @@ function fillInputs(){
   document.querySelectorAll('[data-path]').forEach(el=>{
     const v=getPath(el.dataset.path);
     if(el.type==='checkbox')el.checked=!!v;
-    else if(el.type==='radio')el.checked=(el.value===v);
+    else if(el.type==='radio')el.checked=(el.value===String(v));
     else el.value=(v===undefined?'':v);
   });
 }
@@ -804,7 +832,7 @@ function renderCal(){
 function calStatus(c){
   const el=document.getElementById('calStatus');
   if(!c.cal)return;
-  const need=c.hours, have=c.calHours, diff=have-need;
+  const need=c.elapsed, have=c.calHours, diff=have-need;
   if(!c.calDates.length){el.className='cal-status warn';el.textContent=`Wybierz dni pracy. Potrzebujesz ok. ${fN(need)} h, czyli ${c.autoDays} dni po ${fN(c.hpd)} h.`;return}
   if(diff<-0.01){el.className='cal-status warn';el.textContent=`Wybrane: ${c.calDates.length} dni, ${fN(have)} h. Brakuje ${fN(-diff)} h pracy, dodaj dzień albo godziny.`}
   else{el.className='cal-status ok';el.textContent=`Wybrane: ${c.calDates.length} dni, ${fN(have)} h. Potrzeba ${fN(need)} h, zapas ${fN(diff)} h.`}
@@ -813,7 +841,7 @@ function fillCal(){
   const c=compute();const need=c.autoDays||1,hpd=c.hpd;
   S.travel.cal={};
   const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+1);
-  let left=c.hours;
+  let left=c.elapsed;
   while(Object.keys(S.travel.cal).length<need){
     const wd=d.getDay();
     if(wd!==0&&wd!==6){const hrs=Math.min(hpd,Math.max(0.5,Math.ceil(left*2)/2));S.travel.cal[keyOf(d)]=Object.keys(S.travel.cal).length<need-1?hpd:Math.min(hpd,hrs);left-=hpd}
@@ -844,7 +872,7 @@ document.addEventListener('input',e=>{
   const el=e.target,p=el.dataset.path;if(!p)return;
   let v;
   if(el.type==='checkbox')v=el.checked;
-  else if(el.type==='radio'){if(!el.checked)return;v=el.value}
+  else if(el.type==='radio'){if(!el.checked)return;v=p==='crew'?+el.value:el.value}
   else if(el.type==='number')v=el.value===''?'':num(el.value);
   else v=el.value;
   setPathVal(p,v);
@@ -908,7 +936,8 @@ function update(fromPriceInput){
   setRate('ukos',`${fN(num(r.ukosPrice))} zł/mb · ${fN(num(r.ukosMin))} min/mb`);
   document.getElementById('totalM2').textContent=fN(c.tileM2)+' m²';
   document.getElementById('fugaEst').textContent=fN(fugaEstimate(S),0)+' mb';
-  document.getElementById('autoNote').textContent=c.cal?'':`${fN(c.hours)} h ÷ ${fN(c.hpd)} h = ${c.autoDays} ${dni(c.autoDays)} pracy`;
+  document.getElementById('autoNote').textContent=c.cal?'':(c.crew>1?`${fN(c.hours)} rbh ÷ ${c.crew} os. = ${fN(c.elapsed)} h · `:'')+`${fN(c.elapsed)} h ÷ ${fN(c.hpd)} h = ${c.autoDays} ${dni(c.autoDays)} pracy`;
+  document.getElementById('crewNote').textContent=c.crew>1?(c.helperRate>0?`Płacisz pomocnikowi ${zl(c.helperRate)}/dzień, zarobek zostaje u Ciebie.`:`Zarobek dzielony na ${c.crew} osoby po równo.`):'';
   calStatus(c);
 
   // wynik
@@ -936,14 +965,17 @@ function update(fromPriceInput){
   document.querySelectorAll('#chips [data-mk]').forEach(b=>b.classList.toggle('on',Math.abs(S.markup-(+b.dataset.mk))<0.05));
   document.getElementById('zeroBtn').classList.toggle('on',c.zero>0&&Math.abs(P-Math.ceil(c.zero))<0.5);
 
-  const kNet=document.getElementById('kNet');kNet.textContent=zl(n.net);kNet.parentElement.classList.toggle('neg',n.net<-0.5);
+  const per=n.net/c.sharers, split=c.sharers>1;
+  document.getElementById('kNetL').textContent=split?`Zostaje na osobę (${c.sharers} os.)`:'Zostaje Tobie';
+  const kNet=document.getElementById('kNet');kNet.textContent=zl(per);kNet.parentElement.classList.toggle('neg',n.net<-0.5);
   const ded=[];if(c.fuelCost)ded.push(`paliwo ${zl(c.fuelCost)}`);if(c.mat)ded.push(`materiały ${zl(c.mat)}`);
-  if(c.tools)ded.push(`narzędzia ${zl(c.tools)}`);if(c.daily)ded.push(`koszty dnia ${zl(c.daily)}`);if(c.t)ded.push(`podatek ${zl(n.tax)}`);
-  document.getElementById('kNetS').textContent=`${zl(P)}`+(ded.length?` − ${ded.join(' − ')}`:'');
-  document.getElementById('kDay').textContent=c.days?zl(n.net/c.days):'—';
-  document.getElementById('kDayS').textContent=c.days?`zostaje ÷ ${c.days} ${dni(c.days)} na budowie`:'brak dni pracy';
-  document.getElementById('kHour').textContent=c.hours>0?zl(n.net/c.hours):'—';
-  document.getElementById('kHourS').textContent=`zostaje ÷ ${fN(c.hours)} h pracy`;
+  if(c.tools)ded.push(`narzędzia ${zl(c.tools)}`);if(c.daily)ded.push(`koszty dnia ${zl(c.daily)}`);if(c.helper)ded.push(`pomocnik ${zl(c.helper)}`);if(c.t)ded.push(`podatek ${zl(n.tax)}`);
+  document.getElementById('kNetS').textContent=(split?'(':'')+`${zl(P)}`+(ded.length?` − ${ded.join(' − ')}`:'')+(split?`) ÷ ${c.sharers} = ${zl(per)}`:'');
+  const who=split?' na osobę':'';
+  document.getElementById('kDay').textContent=c.days?zl(per/c.days):'—';
+  document.getElementById('kDayS').textContent=c.days?`zostaje${who} ÷ ${c.days} ${dni(c.days)} na budowie`:'brak dni pracy';
+  document.getElementById('kHour').textContent=c.elapsed>0?zl(per/c.elapsed):'—';
+  document.getElementById('kHourS').textContent=`zostaje${who} ÷ ${fN(c.elapsed)} h na budowie`;
   const over=P-c.zero, overPct=c.zero>0?over/c.zero*100:0, margin=P>0?n.net/P*100:0;
   const kPct=document.getElementById('kPct');
   kPct.textContent=c.zero>0?signPct(overPct):signZl(over);
@@ -963,18 +995,20 @@ function update(fromPriceInput){
   if(c.mat)h+=row('− materiały','','','−'+zl(c.mat),'cost');
   if(c.tools)h+=row('− narzędzia i zużycie','','','−'+zl(c.tools),'cost');
   if(c.daily)h+=row(`− koszty stałe: ${c.days} × ${zl(c.dailyRate)}`,'','','−'+zl(c.daily),'cost');
+  if(c.helper)h+=row(`− pomocnik: ${c.crew-1} os. × ${c.days} × ${zl(c.helperRate)}`,'','','−'+zl(c.helper),'cost');
   if(c.t)h+=row(`− podatek ${fN(c.t*100)}% od ceny`,'','','−'+zl(n.tax),'cost');
-  h+=row('Zostaje Tobie','','',zl(n.net),'sum');
+  h+=row(split?`Zostaje zespołowi`:'Zostaje Tobie','','',zl(n.net),'sum');
+  if(split)h+=row(`Na osobę (÷ ${c.sharers})`,'','',zl(per),'sum');
   h+=row('Wycena na zero (zostaje 0 zł)','','',zl(c.zero),'cost');
   document.getElementById('tbl').innerHTML=h;
 
   document.getElementById('mPrice').textContent=zl(P);
-  document.getElementById('mNet').textContent='· '+zl(n.net);
+  document.getElementById('mNet').textContent='· '+zl(per);
 
   lastSummary=[
     'Wycena prac glazurniczych',
     ...c.items.map(i=>`- ${i.name}: ${i.qty}`),
-    `Czas pracy: ok. ${fN(c.hours)} h, ${c.days} ${dni(c.days)}`,
+    `Czas pracy: ok. ${c.days} ${dni(c.days)}`+(c.crew>1?` (${c.crew} osoby)`:''),
     `Cena: ${zl(P)}`
   ].join('\n');
   save();

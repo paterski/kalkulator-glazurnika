@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalkulator wyceny glazurnika</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Układ: formularz zadań po lewej, przyklejony panel wyniku z suwakiem po prawej; na telefonie jedna kolumna + dolny pasek z ceną.
+   Tylko tryb jasny, kontrast tekstu min. 4.5:1, pola min. 44 px wysokości, widoczne etykiety nad polami. */
+:root{
+  color-scheme:light;
+  --bg:#EEF2F6;
+  --surface:#FFFFFF;
+  --surface-2:#F6F9FB;
+  --ink:#0F1C2A;
+  --ink-2:#2B3A4A;
+  --muted:#4A5868;
+  --line:#DCE3EA;
+  --field-border:#8493A4;
+  --accent:#0B57A4;
+  --accent-hover:#094A8C;
+  --accent-ink:#FFFFFF;
+  --accent-soft:#E5EFFA;
+  --good:#136B39;
+  --good-soft:#E3F4E9;
+  --good-line:#9FD3B2;
+  --bad:#B42318;
+  --bad-soft:#FDE8E6;
+  --warn:#7A4A00;
+  --warn-soft:#FFF3D6;
+  --warn-line:#E9C46A;
+  --bar-bg:#0F1C2A;
+  --bar-ink:#FFFFFF;
+  --bar-muted:#C9D4DF;
+  --bar-good:#9EE2B8;
+  --f:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:12px;
+  --h:44px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:16px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 120px}
+@media (min-width:1000px){.wrap{padding-bottom:56px}}
+h1,h2,h3{font-weight:700;margin:0;text-wrap:balance;letter-spacing:-.01em;color:var(--ink)}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+input,select{font:inherit;color:var(--ink)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Nagłówek */
+.top{padding-block:32px 24px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px}
+.eyebrow{font-size:14px;font-weight:600;color:var(--accent)}
+.top h1{font-size:clamp(28px,4.4vw,40px);line-height:1.1;margin-top:4px}
+.top p{margin:8px 0 0;color:var(--muted);max-width:62ch;font-size:17px}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{min-height:var(--h);border:1.5px solid var(--field-border);background:var(--surface);border-radius:10px;padding:8px 16px;font-weight:600;font-size:15px;transition:border-color .15s,color .15s,background .15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{background:var(--accent-hover);color:var(--accent-ink)}
+.btn.danger{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start}
+@media (min-width:1000px){
+  .layout{grid-template-columns:minmax(0,1fr) 420px}
+  .result{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);max-height:calc(100vh - 32px);overflow:auto}
+}
+.form{display:grid;gap:16px;min-width:0}
+
+/* Sekcje */
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0;box-shadow:0 1px 2px rgba(15,28,42,.04)}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:4px 16px;flex-wrap:wrap;padding:18px 20px 14px;border-bottom:1px solid var(--line)}
+.sec-h h2{font-size:20px}
+.sec-h .tag{font-size:14px;color:var(--muted)}
+.sec-b{padding:4px 20px 16px}
+
+/* Wiersz zadania */
+.task{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.task:last-child{border-bottom:0}
+.task-head{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-width:0;padding-block:2px}
+.task-head input[type=checkbox]{width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent);flex:none;cursor:pointer}
+.task-txt{display:grid;gap:2px;min-width:0}
+.task-txt b{font-weight:600;font-size:16.5px}
+.task-txt small{color:var(--muted);font-size:14px;line-height:1.4}
+.task-ctrl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.task-out{font-size:14px;color:var(--muted);min-width:150px;text-align:right;font-variant-numeric:tabular-nums;line-height:1.35}
+.task-out b{display:block;color:var(--ink);font-weight:700;font-size:16px}
+.task.off .task-ctrl{opacity:.45}
+.task.off .task-txt b,.task.off .task-out b{color:var(--muted)}
+@media (max-width:640px){
+  .task{grid-template-columns:minmax(0,1fr)}
+  .task-ctrl{justify-content:space-between;padding-left:34px}
+  .task-out{min-width:0}
+}
+
+.fld{display:inline-flex;align-items:center;min-height:var(--h);border:1.5px solid var(--field-border);border-radius:9px;background:var(--surface);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.fld:hover{border-color:var(--ink-2)}
+.fld:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.fld input,.fld select{border:0;background:transparent;padding:8px 10px;width:84px;outline:none;font-size:16px;font-weight:500;font-variant-numeric:tabular-nums;min-width:0;height:calc(var(--h) - 3px)}
+.fld select{width:100%;padding-right:6px;cursor:pointer}
+.fld > span{padding:0 11px 0 2px;color:var(--muted);font-size:14px;white-space:nowrap}
+.fld.w-sm input{width:72px}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+.seg{display:inline-flex;border:1.5px solid var(--field-border);border-radius:9px;overflow:hidden;background:var(--surface);min-height:var(--h)}
+.seg label{position:relative;cursor:pointer;display:flex}
+.seg label + label{border-left:1.5px solid var(--field-border)}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg span{display:flex;align-items:center;padding:8px 14px;font-size:15px;font-weight:600;color:var(--ink-2)}
+.seg input:checked + span{background:var(--accent);color:var(--accent-ink)}
+.seg input:focus-visible + span{outline:3px solid var(--accent);outline-offset:-3px}
+
+.linkbtn{border:0;background:none;color:var(--accent);padding:0;font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+
+/* Płytki */
+.tiles{display:grid;gap:12px;padding-top:12px}
+.tile{display:grid;grid-template-columns:48px minmax(0,1fr);gap:14px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.tile-shape{width:48px;height:48px;display:grid;place-items:center;margin-top:24px}
+.tile-shape i{display:block;border:2px solid var(--accent);background:var(--accent-soft);border-radius:2px}
+.tile-body{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px 12px;align-items:end;min-width:0}
+.tf{display:grid;gap:4px;min-width:0}
+.tf-l{font-size:13.5px;font-weight:600;color:var(--ink-2)}
+.tf .fld,.tf .fld input{width:100%}
+.tf-wide{grid-column:span 2}
+.custom-wh{display:contents}
+.tile-meta{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;gap:6px 14px;flex-wrap:wrap;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:4px}
+.tile-meta b{color:var(--ink);font-weight:700}
+.tile-meta .meta-r{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.src{font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--line);color:var(--ink-2)}
+.src.own{background:var(--accent-soft);color:var(--accent)}
+.rm{min-height:36px;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 12px;color:var(--muted);font-size:14px;font-weight:600}
+.rm:hover{border-color:var(--bad);color:var(--bad)}
+@media (max-width:520px){.tile{grid-template-columns:minmax(0,1fr)}.tile-shape{display:none}.tf-wide{grid-column:1 / -1}}
+.add-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-top:14px}
+.total-m2{font-size:15px;color:var(--muted)}
+.total-m2 b{color:var(--ink);font-weight:700;font-size:17px}
+
+/* Dojazd */
+.grid-in{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;padding-top:14px}
+.lab{display:grid;gap:5px;font-size:14px;font-weight:600;color:var(--ink-2)}
+.lab .fld,.lab .fld input{width:100%}
+.mode-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding-top:18px}
+.note{font-size:14px;color:var(--muted)}
+.cal{margin-top:14px;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--surface-2)}
+.cal-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.cal-h strong{font-size:18px;font-weight:700;text-transform:capitalize}
+.cal-nav{border:1.5px solid var(--field-border);background:var(--surface);border-radius:8px;width:var(--h);height:var(--h);font-size:20px;line-height:1}
+.cal-nav:hover{border-color:var(--accent);color:var(--accent)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.cal-dow{font-size:13px;font-weight:600;text-align:center;color:var(--muted);padding:2px 0}
+.cal-day{border:1.5px solid var(--line);background:var(--surface);border-radius:8px;height:var(--h);font-variant-numeric:tabular-nums;font-size:15px;font-weight:500;position:relative}
+.cal-day:hover{border-color:var(--accent)}
+.cal-day.we{color:var(--muted);background:var(--surface-2)}
+.cal-day.today{border-color:var(--accent);font-weight:700}
+.cal-day[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.cal-day small{position:absolute;right:4px;bottom:1px;font-size:10.5px;font-weight:600}
+.cal-day:disabled{visibility:hidden}
+.cal-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip-day{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--field-border);border-radius:9px;background:var(--surface);padding:3px 3px 3px 10px;font-size:14px;font-weight:500}
+.chip-day input{width:52px;height:34px;border:1px solid var(--line);background:var(--surface-2);border-radius:6px;padding:4px 6px;text-align:right;font-variant-numeric:tabular-nums;font-size:15px}
+.chip-day button{border:0;background:none;color:var(--muted);width:32px;height:34px;font-size:18px;line-height:1;border-radius:6px}
+.chip-day button:hover{color:var(--bad);background:var(--bad-soft)}
+.cal-status{margin-top:12px;font-size:15px;font-weight:500;padding:10px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--line)}
+.cal-status.warn{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn)}
+.cal-status.ok{background:var(--good-soft);border-color:var(--good-line);color:var(--good)}
+.cal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+details.rates summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:18px 20px}
+details.rates summary::-webkit-details-marker{display:none}
+details.rates summary h2{font-size:20px}
+details.rates summary .tag{font-size:14px;font-weight:600;color:var(--accent)}
+details.rates summary .tag::after{content:" ▾"}
+details.rates[open] summary{border-bottom:1px solid var(--line)}
+details.rates[open] summary .tag::after{content:" ▴"}
+.rates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0 24px;padding:8px 20px 18px}
+.rate{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.rate .fld input{width:76px}
+
+/* Panel wyniku */
+.result{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0;box-shadow:0 4px 18px rgba(15,28,42,.07)}
+.res-zero{padding:20px 22px 16px;border-bottom:1px solid var(--line)}
+.res-zero .eyebrow{color:var(--muted)}
+.res-zero .big{font-size:36px;font-weight:700;line-height:1.1;margin-top:2px;letter-spacing:-.01em}
+.res-zero .sub{font-size:14px;color:var(--muted);margin-top:4px}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.fact{padding:12px 14px;border-right:1px solid var(--line);min-width:0}
+.fact:last-child{border-right:0}
+.fact .k{font-size:13px;font-weight:600;color:var(--muted)}
+.fact .v{font-size:19px;font-weight:700;line-height:1.25;margin-top:2px;white-space:nowrap}
+
+.slide{padding:18px 22px 20px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.slide .eyebrow{color:var(--ink-2);margin-bottom:6px}
+.price-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.price-in{display:flex;align-items:baseline;gap:6px;border:1.5px solid var(--field-border);background:var(--surface);border-radius:10px;padding:4px 14px}
+.price-in:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.price-in input{font-size:34px;font-weight:700;border:0;background:transparent;width:170px;padding:0;outline:none;font-variant-numeric:tabular-nums}
+.price-in span{font-size:22px;font-weight:600;color:var(--muted)}
+.pct-badge{font-size:18px;font-weight:700;padding:6px 12px;border-radius:999px}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.pct-badge.pos{background:var(--good-soft)} .pct-badge.neg{background:var(--bad-soft)} .pct-badge.zero{background:var(--line);color:var(--ink-2)}
+
+.range{position:relative;margin-top:26px;padding-bottom:30px}
+.range input{-webkit-appearance:none;appearance:none;width:100%;height:10px;border-radius:6px;background:var(--line);margin:0;outline:none;cursor:pointer}
+.range input::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--surface);border:4px solid var(--accent);box-shadow:0 2px 6px rgba(15,28,42,.25);cursor:grab}
+.range input::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--surface);border:4px solid var(--accent);box-shadow:0 2px 6px rgba(15,28,42,.25);cursor:grab}
+.range input:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 5px var(--accent-soft)}
+.zero-tick{position:absolute;top:-8px;width:3px;height:26px;border-radius:2px;background:var(--ink);transform:translateX(-1.5px);pointer-events:none}
+.zero-lbl{position:absolute;top:24px;transform:translateX(-50%);font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;pointer-events:none}
+.end-lbl{position:absolute;top:24px;font-size:13px;font-weight:500;color:var(--muted)}
+.end-lbl.l{left:0}.end-lbl.r{right:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:38px;border:1.5px solid var(--field-border);background:var(--surface);border-radius:999px;padding:4px 14px;font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.kpi{padding:16px 22px;border-bottom:1px solid var(--line);min-width:0}
+.kpi:nth-child(even){border-right:1px solid var(--line)}
+.kpi .k{font-size:14px;color:var(--ink-2);font-weight:600}
+.kpi .v{font-size:26px;font-weight:700;line-height:1.15;margin-top:2px;white-space:nowrap}
+.kpi .s{font-size:13.5px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+.kpi.main{grid-column:1 / -1;border-right:0;background:var(--good-soft)}
+.kpi.main.neg{background:var(--bad-soft)}
+.kpi.main .k{color:var(--good)}
+.kpi.main.neg .k{color:var(--bad)}
+.kpi.main .v{font-size:40px}
+
+.breakdown{padding:4px 22px 16px}
+.breakdown summary{cursor:pointer;padding:14px 0 10px;font-size:17px;font-weight:700}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+td,th{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:600}
+td.r,th.r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+tr.sum td{font-weight:700;border-bottom:0;padding-top:10px}
+tr.cost td{color:var(--muted)}
+.res-foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:0 22px 20px}
+.copied{font-size:14px;font-weight:600;color:var(--good)}
+.copy-fallback{width:100%;min-height:130px;font:14px/1.45 var(--f);border:1.5px solid var(--field-border);border-radius:8px;background:var(--surface-2);color:var(--ink);padding:10px}
+
+/* Dolny pasek na telefonie */
+.mbar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--bar-bg);color:var(--bar-ink);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 -4px 16px rgba(15,28,42,.18)}
+.mbar b{font-size:22px;font-weight:700}
+.mbar small{display:block;font-size:13px;color:var(--bar-muted)}
+.mbar .mnet{color:var(--bar-good);font-weight:600}
+.mbar a{color:var(--bar-ink);font-weight:600;font-size:15px;border:1.5px solid var(--bar-ink);border-radius:9px;padding:9px 14px;text-decoration:none;white-space:nowrap}
+@media (min-width:1000px){.mbar{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Glazura, robocizna i dojazdy</div>
+      <h1>Kalkulator wyceny glazurnika</h1>
+      <p>Zaznacz, co robisz na tej inwestycji. Kalkulator liczy wycenę na zero, a suwakiem ustawiasz cenę dla klienta.</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="resetBtn" type="button">Wczytaj przykład</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main class="form">
+
+      <!-- Płytki -->
+      <section class="sec">
+        <div class="sec-h"><h2>Płytki do ułożenia</h2><span class="tag">obowiązkowe</span></div>
+        <div class="sec-b">
+          <div class="tiles" id="tiles"></div>
+          <div class="add-row">
+            <button class="btn" type="button" id="addTile">+ Dodaj powierzchnię</button>
+            <div class="total-m2">Razem: <b id="totalM2">0 m²</b></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Przygotowanie podłoża -->
+      <section class="sec">
+        <div class="sec-h"><h2>Przygotowanie podłoża</h2><span class="tag">wycena wg czasu · <span id="hourlyTag">150 zł/h</span></span></div>
+        <div class="sec-b" id="prepList"></div>
+      </section>
+
+      <!-- Prace dodatkowe -->
+      <section class="sec">
+        <div class="sec-h"><h2>Prace dodatkowe</h2><span class="tag">zaznacz, jeśli robisz</span></div>
+        <div class="sec-b">
+          <div class="task" data-task="wnoszenie">
+            <label class="task-head"><input type="checkbox" id="wnoszenie-on" data-path="wnoszenie.on">
+              <span class="task-txt"><b>Wnoszenie materiału</b><small data-rate="wnoszenie"></small></span></label>
+            <div class="task-ctrl">
+              <label class="fld w-sm"><input type="number" id="wnoszenie-h" data-path="wnoszenie.h" min="0" step="0.5" aria-label="Godziny wnoszenia"><span>h</span></label>
+              <div class="task-out" data-out="wnoszenie"></div>
+            </div>
+          </div>
+          <div class="task" data-task="instal">
+            <label class="task-head"><input type="checkbox" id="instal-on" data-path="instal.on">
+              <span class="task-txt"><b>Przenoszenie instalacji</b><small data-rate="instal"></small></span></label>
+            <div class="task-ctrl">
+              <label class="fld w-sm"><input type="number" id="instal-n" data-path="instal.n" min="0" step="1" aria-label="Liczba punktów"><span>pkt</span></label>
+              <div class="task-out" data-out="instal"></div>
+            </div>
+          </div>
+          <div class="task" data-task="bialy">
+            <label class="task-head"><input type="checkbox" id="bialy-on" data-path="bialy.on">
+              <span class="task-txt"><b>Biały montaż</b><small data-rate="bialy"></small></span></label>
+            <div class="task-ctrl">
+              <label class="fld w-sm"><input type="number" id="bialy-h" data-path="bialy.h" min="0" step="0.5" aria-label="Godziny białego montażu"><span>h</span></label>
+              <div class="task-out" data-out="bialy"></div>
+            </div>
+          </div>
+          <div class="task" data-task="otwory">
+            <label class="task-head"><input type="checkbox" id="otwory-on" data-path="otwory.on">
+              <span class="task-txt"><b>Otworowanie</b><small data-rate="otwory"></small></span></label>
+            <div class="task-ctrl">
+              <label class="fld w-sm"><input type="number" id="otwory-n" data-path="otwory.n" min="0" step="1" aria-label="Liczba otworów"><span>szt.</span></label>
+              <div class="task-out" data-out="otwory"></div>
+            </div>
+          </div>
+          <div class="task" data-task="fuga">
+            <label class="task-head"><input type="checkbox" id="fuga-on" data-path="fuga.on">
+              <span class="task-txt"><b>Fugowanie</b><small data-rate="fuga"></small>
+                <small>Szacunek z płytek: <span id="fugaEst">0 mb</span> · <button type="button" class="linkbtn" id="fugaUseEst">wstaw</button></small></span></label>
+            <div class="task-ctrl">
+              <div class="seg" role="radiogroup" aria-label="Rodzaj fugi">
+                <label><input type="radio" name="fugaType" id="fuga-zw" value="zw" data-path="fuga.type"><span>Zwykła</span></label>
+                <label><input type="radio" name="fugaType" id="fuga-epo" value="epo" data-path="fuga.type"><span>Epoksyd</span></label>
+              </div>
+              <label class="fld w-sm"><input type="number" id="fuga-mb" data-path="fuga.mb" min="0" step="1" aria-label="Metry bieżące fugi"><span>mb</span></label>
+              <div class="task-out" data-out="fuga"></div>
+            </div>
+          </div>
+          <div class="task" data-task="ukos">
+            <label class="task-head"><input type="checkbox" id="ukos-on" data-path="ukos.on">
+              <span class="task-txt"><b>Ukosowanie (szlif 45°)</b><small data-rate="ukos"></small></span></label>
+            <div class="task-ctrl">
+              <label class="fld w-sm"><input type="number" id="ukos-mb" data-path="ukos.mb" min="0" step="0.5" aria-label="Metry bieżące ukosowania"><span>mb</span></label>
+              <div class="task-out" data-out="ukos"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dojazd -->
+      <section class="sec">
+        <div class="sec-h"><h2>Dojazd i dni pracy</h2><span class="tag">każdy dzień = jazda tam i z powrotem</span></div>
+        <div class="sec-b">
+          <div class="grid-in">
+            <label class="lab">Odległość w jedną stronę
+              <span class="fld"><input type="number" id="t-km" data-path="travel.km" min="0" step="1"><span>km</span></span></label>
+            <label class="lab">Spalanie samochodu
+              <span class="fld"><input type="number" id="t-cons" data-path="travel.cons" min="0" step="0.1"><span>l/100 km</span></span></label>
+            <label class="lab">Cena paliwa
+              <span class="fld"><input type="number" id="t-fuel" data-path="travel.fuel" min="0" step="0.01"><span>zł/l</span></span></label>
+            <label class="lab">Dzień roboczy
+              <span class="fld"><input type="number" id="t-hpd" data-path="travel.hpd" min="1" max="24" step="0.5"><span>h</span></span></label>
+            <label class="lab">Dodatkowe przejazdy (pomiar, zakupy)
+              <span class="fld"><input type="number" id="t-extra" data-path="travel.extra" min="0" step="1"><span>razy</span></span></label>
+          </div>
+          <div class="mode-row">
+            <div class="seg" role="radiogroup" aria-label="Sposób liczenia dni">
+              <label><input type="radio" name="tmode" id="tmode-auto" value="auto" data-path="travel.mode"><span>Licz dni automatycznie</span></label>
+              <label><input type="radio" name="tmode" id="tmode-cal" value="cal" data-path="travel.mode"><span>Wybierz dni w kalendarzu</span></label>
+            </div>
+            <div class="note" id="autoNote"></div>
+          </div>
+          <div id="calWrap" hidden>
+            <div class="cal">
+              <div class="cal-h">
+                <button type="button" class="cal-nav" data-calnav="-1" aria-label="Poprzedni miesiąc">‹</button>
+                <strong id="calTitle"></strong>
+                <button type="button" class="cal-nav" data-calnav="1" aria-label="Następny miesiąc">›</button>
+              </div>
+              <div class="cal-grid" id="calGrid"></div>
+              <div class="cal-list" id="calList"></div>
+              <div class="cal-status" id="calStatus"></div>
+              <div class="cal-actions">
+                <button type="button" class="btn" id="calFill">Rozplanuj od jutra (pn–pt)</button>
+                <button type="button" class="btn" id="calClear">Wyczyść dni</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Koszty własne -->
+      <section class="sec">
+        <div class="sec-h"><h2>Twoje koszty</h2><span class="tag">odejmowane od tego, co zostaje</span></div>
+        <div class="sec-b">
+          <div class="task" data-task="costs">
+            <label class="task-head"><input type="checkbox" id="costs-on" data-path="costs.on">
+              <span class="task-txt"><b>Odliczaj podatek i inne koszty</b><small>Podatek liczony od ceny dla klienta; inne koszty to np. tarcze, wiertła, chemia.</small></span></label>
+            <div class="task-ctrl">
+              <label class="fld w-sm"><input type="number" id="costs-tax" data-path="costs.tax" min="0" max="100" step="0.5" aria-label="Podatek w procentach"><span>% podatku</span></label>
+              <label class="fld"><input type="number" id="costs-other" data-path="costs.other" min="0" step="10" aria-label="Inne koszty w złotych"><span>zł</span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cennik -->
+      <details class="sec rates">
+        <summary><h2>Cennik i czasy</h2><span class="tag">edytuj stawki</span></summary>
+        <div class="rates-grid" id="ratesGrid"></div>
+      </details>
+    </main>
+
+    <!-- Wynik -->
+    <aside class="result" id="wynik" aria-live="polite">
+      <div class="res-zero">
+        <div class="eyebrow">Wycena na zero</div>
+        <div class="big num" id="zeroVal">0 zł</div>
+        <div class="sub num" id="zeroSub"></div>
+      </div>
+      <div class="facts">
+        <div class="fact"><div class="k">Praca</div><div class="v num" id="fHours">0 h</div></div>
+        <div class="fact"><div class="k">Dni</div><div class="v num" id="fDays">0</div></div>
+        <div class="fact"><div class="k">Kursy</div><div class="v num" id="fTrips">0</div></div>
+        <div class="fact"><div class="k">Paliwo</div><div class="v num" id="fFuel">0 zł</div></div>
+      </div>
+
+      <div class="slide">
+        <div class="eyebrow">Cena dla klienta</div>
+        <div class="price-row">
+          <label class="price-in"><input type="number" id="priceInput" min="0" step="10" aria-label="Cena dla klienta"><span>zł</span></label>
+          <span class="pct-badge num zero" id="pctBadge">0%</span>
+        </div>
+        <div class="range">
+          <input type="range" id="slider" min="-50" max="100" step="1" aria-label="Narzut względem wyceny na zero">
+          <span class="zero-tick" id="zeroTick"></span>
+          <span class="zero-lbl" id="zeroLbl">0 · na zero</span>
+          <span class="end-lbl l">−50%</span><span class="end-lbl r">+100%</span>
+        </div>
+        <div class="chips" id="chips">
+          <button type="button" class="chip" data-mk="-10">−10%</button>
+          <button type="button" class="chip" data-mk="0">Na zero</button>
+          <button type="button" class="chip" data-mk="10">+10%</button>
+          <button type="button" class="chip" data-mk="20">+20%</button>
+          <button type="button" class="chip" data-mk="30">+30%</button>
+          <button type="button" class="chip" id="roundUp">Zaokrąglij w górę do 100 zł</button>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi main"><div class="k">Zostaje Tobie</div><div class="v num" id="kNet">0 zł</div><div class="s num" id="kNetS"></div></div>
+        <div class="kpi"><div class="k">Dniówka</div><div class="v num" id="kDay">0 zł</div><div class="s num" id="kDayS"></div></div>
+        <div class="kpi"><div class="k">Godzinówka</div><div class="v num" id="kHour">0 zł</div><div class="s num" id="kHourS"></div></div>
+        <div class="kpi"><div class="k">Zarobek vs wycena na zero</div><div class="v num" id="kPct">0%</div><div class="s num" id="kPctS"></div></div>
+        <div class="kpi"><div class="k">Cena za m² płytek</div><div class="v num" id="kM2">0 zł</div><div class="s num" id="kM2S"></div></div>
+      </div>
+
+      <details class="breakdown" open>
+        <summary>Rozbicie wyceny</summary>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Pozycja</th><th class="r">Ilość</th><th class="r">Czas</th><th class="r">Kwota</th></tr></thead>
+          <tbody id="tbl"></tbody>
+        </table></div>
+      </details>
+      <div class="res-foot">
+        <button type="button" class="btn primary" id="copyBtn">Kopiuj podsumowanie</button>
+        <span class="copied" id="copied" hidden>Skopiowano</span>
+        <textarea class="copy-fallback" id="copyFallback" hidden readonly aria-label="Podsumowanie do skopiowania"></textarea>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="mbar">
+  <div><small>Cena · zostaje Tobie</small><b class="num" id="mPrice">0 zł</b> <span class="num mnet" id="mNet"></span></div>
+  <a href="#wynik">Wynik ↓</a>
+</div>
+
+<script>
+(function(){
+const KEY='glazurnik-wycena-v1';
+
+/* Stawki: wartości podane przez glazurnika */
+const DEFAULT_RATES={
+  hourly:150,
+  kucie:30, wynoszenie:20, odkurzanie:7, gruntowanie:3,
+  wnoszenieRate:150,
+  instalPrice:150, instalMin:60,
+  bialyRate:150,
+  otworPrice:100, otworMin:15,
+  fugaZw:20, fugaEpo:100, fugaMin:3,
+  ukosPrice:150, ukosMin:22
+};
+const RATE_DEFS=[
+  ['hourly','Stawka za przygotowanie podłoża','zł/h'],
+  ['kucie','Kucie','min/m²'],['wynoszenie','Wynoszenie gruzu','min/m²'],
+  ['odkurzanie','Odkurzanie','min/m²'],['gruntowanie','Gruntowanie','min/m²'],
+  ['wnoszenieRate','Wnoszenie materiału','zł/h'],
+  ['instalPrice','Instalacja: cena za punkt','zł'],['instalMin','Instalacja: czas na punkt','min'],
+  ['bialyRate','Biały montaż','zł/h'],
+  ['otworPrice','Otwór: cena','zł'],['otworMin','Otwór: czas','min'],
+  ['fugaZw','Fuga zwykła','zł/mb'],['fugaEpo','Fuga epoksydowa','zł/mb'],['fugaMin','Fugowanie: czas','min/mb'],
+  ['ukosPrice','Ukosowanie: cena','zł/mb'],['ukosMin','Ukosowanie: czas','min/mb']
+];
+const PREP=[['kucie','Kucie podłoża'],['wynoszenie','Wyniesienie gruzu'],['odkurzanie','Odkurzanie'],['gruntowanie','Gruntowanie']];
+
+/* Wymiary płytek. own = stawka podana przez Ciebie, reszta to szacunek */
+const PRESETS=[
+  {id:'60x60',  label:'60×60',               w:60,  h:60,  price:180, min:45, own:true},
+  {id:'120x60', label:'120×60',              w:120, h:60,  price:180, min:45, own:true},
+  {id:'7.5x30', label:'7,5×30 cegiełka',     w:7.5, h:30,  price:300, min:90, own:true},
+  {id:'30x60',  label:'30×60',               w:30,  h:60,  price:170, min:50},
+  {id:'30x30',  label:'30×30 / 33×33',       w:30,  h:30,  price:175, min:55},
+  {id:'80x80',  label:'80×80 / 90×90',       w:80,  h:80,  price:190, min:50},
+  {id:'100x100',label:'100×100',             w:100, h:100, price:210, min:55},
+  {id:'120x120',label:'120×120',             w:120, h:120, price:240, min:65},
+  {id:'120x280',label:'Spiek 120×240 / 280', w:120, h:260, price:320, min:90},
+  {id:'20x120', label:'Deska 20×120 / 180',  w:20,  h:120, price:200, min:60},
+  {id:'6x24',   label:'Cegiełka 6×24 / 10×20',w:7,  h:24,  price:300, min:90},
+  {id:'20x20',  label:'Kafel 15×15 – 20×20', w:20,  h:20,  price:240, min:75},
+  {id:'10x10',  label:'Kafel 10×10',         w:10,  h:10,  price:270, min:85},
+  {id:'hex',    label:'Heksagon',            w:20,  h:23,  price:280, min:85},
+  {id:'jodelka',label:'Jodełka',             w:10,  h:60,  price:330, min:100},
+  {id:'mozaika',label:'Mozaika',             w:5,   h:5,   price:350, min:120},
+  {id:'custom', label:'Inny wymiar…'}
+];
+const presetById=id=>PRESETS.find(p=>p.id===id);
+
+function estimateTile(w,h){
+  const L=Math.max(w,h), s=Math.min(w,h), a=w*h;
+  if(!(L>0&&s>0)) return {price:180,min:45};
+  if(L>=200) return {price:320,min:90};
+  if(L>=110&&s>=100) return {price:240,min:65};
+  if(L>=90&&s<=30) return {price:200,min:60};
+  if(L/s>=3&&s<=10) return {price:300,min:90};
+  if(a>=10000) return {price:210,min:55};
+  if(a>=6400) return {price:190,min:50};
+  if(a>=3600) return {price:180,min:45};
+  if(a>=1500) return {price:170,min:50};
+  if(a>=850) return {price:175,min:55};
+  if(a>=400) return {price:240,min:75};
+  if(a>=100) return {price:270,min:85};
+  return {price:350,min:120};
+}
+const mbPerM2=t=>(t.w>0&&t.h>0)?(100/t.w+100/t.h):0;
+
+function defaults(){
+  const s={
+    tiles:[
+      {label:'Podłoga',m2:6,preset:'60x60',w:60,h:60,price:180,min:45},
+      {label:'Ściany',m2:24,preset:'120x60',w:120,h:60,price:180,min:45}
+    ],
+    prep:{kucie:{on:false,m2:''},wynoszenie:{on:false,m2:''},odkurzanie:{on:true,m2:''},gruntowanie:{on:true,m2:''}},
+    wnoszenie:{on:true,h:1},
+    instal:{on:true,n:2},
+    bialy:{on:true,h:8},
+    otwory:{on:true,n:4},
+    fuga:{on:true,type:'zw',mb:0},
+    ukos:{on:true,mb:6},
+    travel:{km:25,cons:7.5,fuel:6.2,hpd:8,extra:1,mode:'auto',cal:{},calMonth:''},
+    costs:{on:false,tax:12,other:0},
+    rates:Object.assign({},DEFAULT_RATES),
+    markup:15
+  };
+  s.fuga.mb=Math.round(fugaEstimate(s));
+  return s;
+}
+function fugaEstimate(s){return s.tiles.reduce((a,t)=>a+num(t.m2)*mbPerM2(t),0)}
+
+function num(v,fb){fb=fb===undefined?0:fb;if(v===''||v===null||v===undefined)return fb;const n=typeof v==='number'?v:parseFloat(String(v).replace(',','.'));return isFinite(n)?n:fb}
+const nf0=new Intl.NumberFormat('pl-PL',{maximumFractionDigits:0});
+const zl=n=>nf0.format(Math.round(n))+' zł';
+const fN=(n,d)=>new Intl.NumberFormat('pl-PL',{maximumFractionDigits:d===undefined?1:d}).format(n);
+function fT(min){min=Math.round(min);const h=Math.floor(min/60),m=min%60;if(!h)return m+' min';return m?h+' h '+m+' min':h+' h'}
+const signPct=p=>(p>0.05?'+':p<-0.05?'−':'')+fN(Math.abs(p),1)+'%';
+const signZl=n=>(n>0.5?'+':n<-0.5?'−':'')+zl(Math.abs(n));
+
+/* Stan */
+let S;
+function load(){
+  const d=defaults();
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw){const o=JSON.parse(raw);
+      S=Object.assign(d,o);
+      S.rates=Object.assign({},DEFAULT_RATES,o.rates||{});
+      S.prep=Object.assign(defaults().prep,o.prep||{});
+      S.travel=Object.assign(defaults().travel,o.travel||{});
+      if(!Array.isArray(S.tiles)||!S.tiles.length) S.tiles=defaults().tiles;
+      return;}
+  }catch(e){}
+  S=d;
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+function getPath(p){return p.split('.').reduce((o,k)=>o&&o[k],S)}
+function setPathVal(p,v){const ks=p.split('.');let o=S;for(let i=0;i<ks.length-1;i++)o=o[ks[i]];o[ks[ks.length-1]]=v}
+
+/* Obliczenia */
+function compute(){
+  const r=S.rates, items=[], out={};
+  const tileM2=S.tiles.reduce((a,t)=>a+num(t.m2),0);
+  S.tiles.forEach(t=>{
+    const m2=num(t.m2);
+    items.push({name:(t.label||'Płytki')+' · '+tileName(t),qty:fN(m2)+' m²',min:m2*num(t.min),price:m2*num(t.price)});
+  });
+  PREP.forEach(([k,name])=>{
+    const p=S.prep[k];const a=num(p.m2,tileM2);const min=a*num(r[k]);const price=min/60*num(r.hourly);
+    out['prep.'+k]={min,price};
+    if(p.on) items.push({name,qty:fN(a)+' m²',min,price});
+  });
+  const add=(key,on,name,qty,min,price)=>{out[key]={min,price};if(on)items.push({name,qty,min,price})};
+  const wh=num(S.wnoszenie.h);
+  add('wnoszenie',S.wnoszenie.on,'Wnoszenie materiału',fN(wh)+' h',wh*60,wh*num(r.wnoszenieRate));
+  const ip=num(S.instal.n);
+  add('instal',S.instal.on,'Przenoszenie instalacji',fN(ip,0)+' pkt',ip*num(r.instalMin),ip*num(r.instalPrice));
+  const bh=num(S.bialy.h);
+  add('bialy',S.bialy.on,'Biały montaż',fN(bh)+' h',bh*60,bh*num(r.bialyRate));
+  const on=num(S.otwory.n);
+  add('otwory',S.otwory.on,'Otworowanie',fN(on,0)+' szt.',on*num(r.otworMin),on*num(r.otworPrice));
+  const fm=num(S.fuga.mb), epo=S.fuga.type==='epo';
+  add('fuga',S.fuga.on,'Fugowanie '+(epo?'epoksydowe':'zwykłe'),fN(fm)+' mb',fm*num(r.fugaMin),fm*num(epo?r.fugaEpo:r.fugaZw));
+  const um=num(S.ukos.mb);
+  add('ukos',S.ukos.on,'Ukosowanie',fN(um)+' mb',um*num(r.ukosMin),um*num(r.ukosPrice));
+
+  const workMin=items.reduce((a,i)=>a+i.min,0), labor=items.reduce((a,i)=>a+i.price,0), hours=workMin/60;
+  const hpd=Math.max(0.5,num(S.travel.hpd,8));
+  const autoDays=hours>0?Math.ceil(hours/hpd-1e-9):0;
+  const calDates=Object.keys(S.travel.cal).sort();
+  const calHours=calDates.reduce((a,d)=>a+num(S.travel.cal[d]),0);
+  const cal=S.travel.mode==='cal';
+  const days=cal?calDates.length:autoDays;
+  const trips=days+Math.max(0,Math.round(num(S.travel.extra)));
+  const km=trips*2*num(S.travel.km);
+  const liters=km*num(S.travel.cons)/100;
+  const fuelCost=liters*num(S.travel.fuel);
+  const zero=labor+fuelCost;
+  return {items,out,tileM2,workMin,hours,labor,hpd,autoDays,days,calDates,calHours,cal,trips,km,liters,fuelCost,zero};
+}
+function tileName(t){
+  if(t.preset!=='custom'){const p=presetById(t.preset);if(p)return p.label}
+  return fN(num(t.w))+'×'+fN(num(t.h));
+}
+function netAt(P,c){
+  const tax=S.costs.on?P*num(S.costs.tax)/100:0;
+  const other=S.costs.on?num(S.costs.other):0;
+  return {net:P-c.fuelCost-tax-other,tax,other};
+}
+
+/* Render: płytki */
+const tilesEl=document.getElementById('tiles');
+function renderTiles(){
+  tilesEl.innerHTML=S.tiles.map((t,i)=>{
+    const p=presetById(t.preset)||{};
+    const own=!!p.own&&num(t.price)===p.price&&num(t.min)===p.min;
+    const opts=PRESETS.map(o=>`<option value="${o.id}"${o.id===t.preset?' selected':''}>${o.label}</option>`).join('');
+    return `<div class="tile" data-ti="${i}">
+      <div class="tile-shape">${shape(t)}</div>
+      <div class="tile-body">
+        <label class="tf tf-wide"><span class="tf-l">Powierzchnia</span><span class="fld"><input type="text" id="tile-${i}-label" data-tf="label" value="${esc(t.label)}" placeholder="np. Podłoga"></span></label>
+        <label class="tf"><span class="tf-l">Ilość</span><span class="fld"><input type="number" id="tile-${i}-m2" data-tf="m2" value="${t.m2}" min="0" step="0.1" inputmode="decimal"><span>m²</span></span></label>
+        <label class="tf tf-wide"><span class="tf-l">Wymiar płytki</span><span class="fld"><select id="tile-${i}-preset" data-tf="preset">${opts}</select></span></label>
+        <span class="custom-wh" ${t.preset==='custom'?'':'hidden'}>
+          <label class="tf"><span class="tf-l">Szerokość</span><span class="fld"><input type="number" id="tile-${i}-w" data-tf="w" value="${t.w}" min="1" step="0.5" inputmode="decimal"><span>cm</span></span></label>
+          <label class="tf"><span class="tf-l">Długość</span><span class="fld"><input type="number" id="tile-${i}-h" data-tf="h" value="${t.h}" min="1" step="0.5" inputmode="decimal"><span>cm</span></span></label>
+        </span>
+        <label class="tf"><span class="tf-l">Cena</span><span class="fld"><input type="number" id="tile-${i}-price" data-tf="price" value="${t.price}" min="0" step="5" inputmode="decimal"><span>zł/m²</span></span></label>
+        <label class="tf"><span class="tf-l">Czas</span><span class="fld"><input type="number" id="tile-${i}-min" data-tf="min" value="${t.min}" min="0" step="5" inputmode="decimal"><span>min/m²</span></span></label>
+        <div class="tile-meta"><span data-meta>${tileMeta(t)}</span>
+          <span class="meta-r"><span class="src${own?' own':''}" data-src>${own?'Twoja stawka':'Szacunek, możesz zmienić'}</span>
+          ${S.tiles.length>1?`<button type="button" class="rm" data-rm="${i}" aria-label="Usuń powierzchnię ${esc(t.label)}">Usuń</button>`:''}</span></div>
+      </div></div>`;
+  }).join('');
+}
+function shape(t){
+  const w=num(t.w,60),h=num(t.h,60),m=Math.max(w,h);
+  const W=Math.max(6,Math.round(40*w/m)),H=Math.max(6,Math.round(40*h/m));
+  return `<i style="width:${W}px;height:${H}px"></i>`;
+}
+function tileMeta(t){
+  const m2=num(t.m2);
+  return `<b>${zl(m2*num(t.price))}</b> · ${fT(m2*num(t.min))} · fuga ≈ ${fN(mbPerM2(t))} mb/m²`;
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+tilesEl.addEventListener('input',e=>{
+  const el=e.target,f=el.dataset.tf;if(!f)return;
+  const row=el.closest('[data-ti]'),i=+row.dataset.ti,t=S.tiles[i];
+  if(f==='label'){t.label=el.value}
+  else if(f==='preset'){
+    t.preset=el.value;
+    const p=presetById(el.value);
+    if(p&&p.id!=='custom'){t.w=p.w;t.h=p.h;t.price=p.price;t.min=p.min}
+    else{const e2=estimateTile(num(t.w),num(t.h));t.price=e2.price;t.min=e2.min}
+    renderTiles();update();return;
+  }else{
+    t[f]=el.value===''?'':num(el.value);
+    if(f==='w'||f==='h'){
+      const e2=estimateTile(num(t.w),num(t.h));t.price=e2.price;t.min=e2.min;
+      row.querySelector('[data-tf=price]').value=t.price;row.querySelector('[data-tf=min]').value=t.min;
+      row.querySelector('.tile-shape').innerHTML=shape(t);
+    }
+  }
+  const p=presetById(t.preset)||{};const own=!!p.own&&num(t.price)===p.price&&num(t.min)===p.min;
+  const src=row.querySelector('[data-src]');src.className='src'+(own?' own':'');src.textContent=own?'Twoja stawka':'Szacunek, możesz zmienić';
+  row.querySelector('[data-meta]').innerHTML=tileMeta(t);
+  update();
+});
+tilesEl.addEventListener('click',e=>{
+  const b=e.target.closest('[data-rm]');if(!b)return;
+  S.tiles.splice(+b.dataset.rm,1);renderTiles();update();
+});
+document.getElementById('addTile').addEventListener('click',()=>{
+  S.tiles.push({label:'Powierzchnia '+(S.tiles.length+1),m2:5,preset:'60x60',w:60,h:60,price:180,min:45});
+  renderTiles();update();
+  const last=tilesEl.querySelector('.tile:last-child [data-tf=m2]');if(last)last.focus();
+});
+
+/* Render: przygotowanie */
+function renderPrep(){
+  document.getElementById('prepList').innerHTML=PREP.map(([k,name])=>`
+    <div class="task" data-task="prep.${k}">
+      <label class="task-head"><input type="checkbox" id="prep-${k}-on" data-path="prep.${k}.on">
+        <span class="task-txt"><b>${name}</b><small data-rate="prep.${k}"></small></span></label>
+      <div class="task-ctrl">
+        <label class="fld w-sm"><input type="number" id="prep-${k}-m2" data-path="prep.${k}.m2" min="0" step="0.5" data-ph="m2" aria-label="${name}: metry kwadratowe"><span>m²</span></label>
+        <div class="task-out" data-out="prep.${k}"></div>
+      </div>
+    </div>`).join('')+`<p class="note" style="margin:8px 0 0">Puste pole m² = cała powierzchnia płytek.</p>`;
+}
+
+/* Render: cennik */
+function renderRates(){
+  document.getElementById('ratesGrid').innerHTML=RATE_DEFS.map(([k,l,u])=>`
+    <div class="rate"><span>${l}</span><label class="fld"><input type="number" id="rate-${k}" data-path="rates.${k}" min="0" step="any" aria-label="${l}"><span>${u}</span></label></div>`).join('')
+    +`<div class="rate" style="border:0"><button type="button" class="linkbtn" id="ratesReset">Przywróć domyślne stawki</button></div>`;
+}
+
+function fillInputs(){
+  document.querySelectorAll('[data-path]').forEach(el=>{
+    const v=getPath(el.dataset.path);
+    if(el.type==='checkbox')el.checked=!!v;
+    else if(el.type==='radio')el.checked=(el.value===v);
+    else el.value=(v===undefined?'':v);
+  });
+}
+
+/* Kalendarz */
+const MONTHS=['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
+const DOW=['pn','wt','śr','cz','pt','sb','nd'];
+const pad=n=>String(n).padStart(2,'0');
+const keyOf=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const fromKey=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
+function renderCal(){
+  const wrap=document.getElementById('calWrap');
+  wrap.hidden=S.travel.mode!=='cal';
+  if(wrap.hidden)return;
+  const today=new Date();
+  if(!S.travel.calMonth)S.travel.calMonth=today.getFullYear()+'-'+pad(today.getMonth()+1);
+  const [y,m]=S.travel.calMonth.split('-').map(Number);
+  document.getElementById('calTitle').textContent=MONTHS[m-1]+' '+y;
+  const first=new Date(y,m-1,1),lead=(first.getDay()+6)%7,dim=new Date(y,m,0).getDate();
+  let h=DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<lead;i++)h+=`<button class="cal-day" disabled tabindex="-1" aria-hidden="true"></button>`;
+  const tk=keyOf(today);
+  for(let d=1;d<=dim;d++){
+    const dt=new Date(y,m-1,d),k=keyOf(dt),sel=k in S.travel.cal,we=dt.getDay()===0||dt.getDay()===6;
+    h+=`<button type="button" class="cal-day${we?' we':''}${k===tk?' today':''}" data-day="${k}" aria-pressed="${sel}" aria-label="${d} ${MONTHS[m-1]}">${d}${sel?`<small>${fN(num(S.travel.cal[k]))}h</small>`:''}</button>`;
+  }
+  document.getElementById('calGrid').innerHTML=h;
+  const dates=Object.keys(S.travel.cal).sort();
+  document.getElementById('calList').innerHTML=dates.map(k=>{const d=fromKey(k);
+    return `<span class="chip-day">${DOW[(d.getDay()+6)%7]} ${pad(d.getDate())}.${pad(d.getMonth()+1)}
+      <input type="number" id="calh-${k}" data-calh="${k}" value="${S.travel.cal[k]}" min="0" max="24" step="0.5" aria-label="Godziny pracy ${k}"> h
+      <button type="button" data-calrm="${k}" aria-label="Usuń dzień">×</button></span>`}).join('');
+}
+function calStatus(c){
+  const el=document.getElementById('calStatus');
+  if(!c.cal)return;
+  const need=c.hours, have=c.calHours, diff=have-need;
+  if(!c.calDates.length){el.className='cal-status warn';el.textContent=`Wybierz dni pracy. Potrzebujesz ok. ${fN(need)} h, czyli ${c.autoDays} dni po ${fN(c.hpd)} h.`;return}
+  if(diff<-0.01){el.className='cal-status warn';el.textContent=`Wybrane: ${c.calDates.length} dni, ${fN(have)} h. Brakuje ${fN(-diff)} h pracy, dodaj dzień albo godziny.`}
+  else{el.className='cal-status ok';el.textContent=`Wybrane: ${c.calDates.length} dni, ${fN(have)} h. Potrzeba ${fN(need)} h, zapas ${fN(diff)} h.`}
+}
+function fillCal(){
+  const c=compute();const need=c.autoDays||1,hpd=c.hpd;
+  S.travel.cal={};
+  const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+1);
+  let left=c.hours;
+  while(Object.keys(S.travel.cal).length<need){
+    const wd=d.getDay();
+    if(wd!==0&&wd!==6){const hrs=Math.min(hpd,Math.max(0.5,Math.ceil(left*2)/2));S.travel.cal[keyOf(d)]=Object.keys(S.travel.cal).length<need-1?hpd:Math.min(hpd,hrs);left-=hpd}
+    d.setDate(d.getDate()+1);
+  }
+  const fk=Object.keys(S.travel.cal).sort()[0];
+  if(fk)S.travel.calMonth=fk.slice(0,7);
+}
+document.getElementById('calWrap').addEventListener('click',e=>{
+  const day=e.target.closest('[data-day]'),nav=e.target.closest('[data-calnav]'),rm=e.target.closest('[data-calrm]');
+  if(day){const k=day.dataset.day;if(k in S.travel.cal)delete S.travel.cal[k];else S.travel.cal[k]=num(S.travel.hpd,8)}
+  else if(nav){const [y,m]=S.travel.calMonth.split('-').map(Number);const d=new Date(y,m-1+(+nav.dataset.calnav),1);S.travel.calMonth=d.getFullYear()+'-'+pad(d.getMonth()+1)}
+  else if(rm){delete S.travel.cal[rm.dataset.calrm]}
+  else if(e.target.id==='calFill'){fillCal()}
+  else if(e.target.id==='calClear'){S.travel.cal={}}
+  else return;
+  renderCal();update();
+});
+document.getElementById('calWrap').addEventListener('input',e=>{
+  const k=e.target.dataset.calh;if(!k)return;
+  S.travel.cal[k]=e.target.value===''?0:num(e.target.value);
+  const btn=document.querySelector(`[data-day="${k}"] small`);if(btn)btn.textContent=fN(num(S.travel.cal[k]))+'h';
+  update();
+});
+
+/* Ogólna obsługa pól */
+document.addEventListener('input',e=>{
+  const el=e.target,p=el.dataset.path;if(!p)return;
+  let v;
+  if(el.type==='checkbox')v=el.checked;
+  else if(el.type==='radio'){if(!el.checked)return;v=el.value}
+  else if(el.type==='number')v=el.value===''?'':num(el.value);
+  else v=el.value;
+  setPathVal(p,v);
+  if(p==='travel.mode'){if(v==='cal'&&!Object.keys(S.travel.cal).length)fillCal();renderCal()}
+  update();
+});
+document.getElementById('fugaUseEst').addEventListener('click',e=>{
+  e.preventDefault();S.fuga.mb=Math.round(fugaEstimate(S));document.getElementById('fuga-mb').value=S.fuga.mb;update();
+});
+document.addEventListener('click',e=>{
+  if(e.target.id==='ratesReset'){S.rates=Object.assign({},DEFAULT_RATES);fillInputs();update()}
+});
+
+/* Suwak */
+const slider=document.getElementById('slider'),priceInput=document.getElementById('priceInput');
+slider.addEventListener('input',()=>{S.markup=+slider.value;update()});
+priceInput.addEventListener('input',()=>{
+  const c=compute();const P=num(priceInput.value);
+  if(c.zero>0){S.markup=(P/c.zero-1)*100}
+  update(true);
+});
+document.getElementById('chips').addEventListener('click',e=>{
+  const b=e.target.closest('[data-mk]');
+  if(b){S.markup=+b.dataset.mk;update();return}
+  if(e.target.id==='roundUp'){const c=compute();if(c.zero>0){const P=c.zero*(1+S.markup/100);const R=Math.ceil(P/100-1e-9)*100;S.markup=(R/c.zero-1)*100;update()}}
+});
+
+/* Reset */
+const resetBtn=document.getElementById('resetBtn');let resetArm=null;
+resetBtn.addEventListener('click',()=>{
+  if(!resetArm){resetBtn.textContent='Na pewno? Kliknij ponownie';resetBtn.classList.add('danger');resetArm=setTimeout(()=>{resetArm=null;resetBtn.textContent='Wczytaj przykład';resetBtn.classList.remove('danger')},3500);return}
+  clearTimeout(resetArm);resetArm=null;resetBtn.textContent='Wczytaj przykład';resetBtn.classList.remove('danger');
+  S=defaults();renderTiles();fillInputs();renderCal();update();
+});
+
+/* Kopiowanie */
+let lastSummary='';
+document.getElementById('copyBtn').addEventListener('click',()=>{
+  const ok=()=>{const c=document.getElementById('copied');c.hidden=false;setTimeout(()=>c.hidden=true,1800)};
+  const fb=()=>{const t=document.getElementById('copyFallback');t.hidden=false;t.value=lastSummary;t.focus();t.select()};
+  try{navigator.clipboard.writeText(lastSummary).then(ok,fb)}catch(e){fb()}
+});
+
+/* Aktualizacja widoku */
+function update(fromPriceInput){
+  const c=compute(),r=S.rates;
+  // wiersze zadań
+  document.querySelectorAll('.task[data-task]').forEach(row=>{
+    const k=row.dataset.task;if(k==='costs'){row.classList.toggle('off',!S.costs.on);return}
+    const on=!!getPath(k+'.on');row.classList.toggle('off',!on);
+    const o=c.out[k],el=row.querySelector('[data-out]');
+    if(o&&el)el.innerHTML=`<b>${zl(o.price)}</b>${fT(o.min)}`;
+  });
+  const setRate=(k,t)=>{const el=document.querySelector(`[data-rate="${k}"]`);if(el)el.textContent=t};
+  PREP.forEach(([k])=>setRate('prep.'+k,`${fN(num(r[k]))} min/m²`));
+  document.querySelectorAll('[data-ph=m2]').forEach(i=>i.placeholder=fN(c.tileM2));
+  document.getElementById('hourlyTag').textContent=fN(num(r.hourly))+' zł/h';
+  setRate('wnoszenie',`${fN(num(r.wnoszenieRate))} zł za godzinę`);
+  setRate('instal',`hydraulika lub elektryka · ${fN(num(r.instalPrice))} zł i ${fN(num(r.instalMin))} min za punkt`);
+  setRate('bialy',`domyślnie 8 h · ${fN(num(r.bialyRate))} zł/h`);
+  setRate('otwory',`${fN(num(r.otworPrice))} zł i ${fN(num(r.otworMin))} min za otwór`);
+  setRate('fuga',`zwykła ${fN(num(r.fugaZw))} zł/mb, epoksyd ${fN(num(r.fugaEpo))} zł/mb · ${fN(num(r.fugaMin))} min/mb`);
+  setRate('ukos',`${fN(num(r.ukosPrice))} zł/mb · ${fN(num(r.ukosMin))} min/mb`);
+  document.getElementById('totalM2').textContent=fN(c.tileM2)+' m²';
+  document.getElementById('fugaEst').textContent=fN(fugaEstimate(S),0)+' mb';
+  document.getElementById('autoNote').textContent=c.cal?'':`${fN(c.hours)} h ÷ ${fN(c.hpd)} h = ${c.autoDays} ${dni(c.autoDays)} pracy`;
+  calStatus(c);
+
+  // wynik
+  const P=c.zero*(1+S.markup/100);
+  const n=netAt(P,c), n0=netAt(c.zero,c);
+  document.getElementById('zeroVal').textContent=zl(c.zero);
+  document.getElementById('zeroSub').textContent=`robocizna ${zl(c.labor)} + dojazdy ${zl(c.fuelCost)}`;
+  document.getElementById('fHours').textContent=fN(c.hours)+' h';
+  document.getElementById('fDays').textContent=c.days;
+  document.getElementById('fTrips').textContent=c.trips;
+  document.getElementById('fFuel').textContent=zl(c.fuelCost);
+
+  if(!fromPriceInput)priceInput.value=Math.round(P);
+  const sv=Math.max(-50,Math.min(100,S.markup));slider.value=Math.round(sv);
+  paintSlider(sv);
+  const pct=c.zero>0?S.markup:0, cls=pct>0.05?'pos':pct<-0.05?'neg':'zero';
+  const badge=document.getElementById('pctBadge');badge.className='pct-badge num '+cls;badge.textContent=signPct(pct);
+  document.querySelectorAll('#chips [data-mk]').forEach(b=>b.classList.toggle('on',Math.abs(S.markup-(+b.dataset.mk))<0.05));
+
+  const kNet=document.getElementById('kNet');kNet.textContent=zl(n.net);kNet.className='v num';kNet.parentElement.classList.toggle('neg',n.net<0);
+  const ded=[`paliwo ${zl(c.fuelCost)}`];if(S.costs.on){ded.push(`podatek ${zl(n.tax)}`);if(n.other)ded.push(`inne ${zl(n.other)}`)}
+  document.getElementById('kNetS').textContent=`${zl(P)} − ${ded.join(' − ')}`;
+  document.getElementById('kDay').textContent=c.days?zl(n.net/c.days):'—';
+  document.getElementById('kDayS').textContent=c.days?`${c.days} ${dni(c.days)} na budowie`:'brak dni pracy';
+  document.getElementById('kHour').textContent=c.hours>0?zl(n.net/c.hours):'—';
+  document.getElementById('kHourS').textContent=`${fN(c.hours)} h pracy`;
+  const kPct=document.getElementById('kPct');kPct.textContent=signPct(pct);kPct.className='v num '+(cls==='zero'?'':cls);
+  const netDiff=n.net-n0.net, netPct=n0.net>0?netDiff/n0.net*100:0;
+  document.getElementById('kPctS').textContent=`${signZl(P-c.zero)} · na rękę ${signPct(netPct)}`;
+  document.getElementById('kM2').textContent=c.tileM2>0?zl(P/c.tileM2):'—';
+  document.getElementById('kM2S').textContent=c.tileM2>0?`całość ÷ ${fN(c.tileM2)} m²`:'';
+
+  // tabela
+  const rows=c.items.map(i=>`<tr><td>${esc(i.name)}</td><td class="r">${i.qty}</td><td class="r">${fT(i.min)}</td><td class="r">${zl(i.price)}</td></tr>`).join('');
+  document.getElementById('tbl').innerHTML=rows+
+    `<tr class="cost"><td>Dojazdy: ${c.trips} × 2 × ${fN(num(S.travel.km))} km</td><td class="r">${fN(c.liters)} l</td><td class="r">${fN(c.km,0)} km</td><td class="r">${zl(c.fuelCost)}</td></tr>`+
+    `<tr class="sum"><td>Wycena na zero</td><td></td><td class="r">${fT(c.workMin)}</td><td class="r">${zl(c.zero)}</td></tr>`+
+    `<tr class="sum"><td>Cena dla klienta (${signPct(pct)})</td><td></td><td></td><td class="r">${zl(P)}</td></tr>`;
+
+  document.getElementById('mPrice').textContent=zl(P);
+  document.getElementById('mNet').textContent='· '+zl(n.net);
+
+  lastSummary=[
+    'Wycena prac glazurniczych',
+    ...c.items.map(i=>`- ${i.name}: ${i.qty}, ${zl(i.price)}`),
+    `- Dojazdy (${c.trips} kursów, ${fN(c.km,0)} km): ${zl(c.fuelCost)}`,
+    `Czas pracy: ok. ${fN(c.hours)} h, ${c.days} ${dni(c.days)}`,
+    `Cena: ${zl(P)}`
+  ].join('\n');
+  save();
+}
+function dni(n){return n===1?'dzień':'dni'}
+function paintSlider(v){
+  const pz=(0+50)/150, pv=(v+50)/150;
+  const a=Math.min(pz,pv)*100,b=Math.max(pz,pv)*100;
+  const col=v>=0?'var(--good)':'var(--bad)';
+  slider.style.background=`linear-gradient(to right,var(--line) 0 ${a}%,${col} ${a}% ${b}%,var(--line) ${b}% 100%)`;
+  const left=`calc(${pz*100}% + ${(0.5-pz)*24}px)`;
+  document.getElementById('zeroTick').style.left=left;
+  document.getElementById('zeroLbl').style.left=left;
+}
+
+load();
+renderTiles();renderPrep();renderRates();fillInputs();renderCal();update();
+})();
+</script>
+
+</body>
+</html>
